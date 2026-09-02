@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TóthBüfé QR Gyorsrendelő – Tóth Hackathon 2026</title>
+  <meta name="description" content="Vége a sorban állásnak! A TóthBüfé QR Gyorsrendelő a Tóth János Technikum nagyszüneti büfé problémájára ad okos megoldást." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── TOKENS ──────────────────────────────────────────────────────────── */
+    :root {
+      --bg:        #06060F;
+      --surface:   #0D0D1F;
+      --card:      rgba(255,255,255,0.04);
+      --border:    rgba(255,255,255,0.08);
+      --teal:      #00D4AA;
+      --teal-dim:  rgba(0,212,170,0.15);
+      --teal-glow: rgba(0,212,170,0.4);
+      --purple:    #8B5CF6;
+      --purple-dim:rgba(139,92,246,0.15);
+      --coral:     #F4845F;
+      --coral-dim: rgba(244,132,95,0.15);
+      --yellow:    #F5C518;
+      --text:      #E8E8F0;
+      --muted:     #6B7280;
+      --ff:        'Outfit', sans-serif;
+      --mono:      'JetBrains Mono', monospace;
+    }
+
+    /* ─── RESET ───────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--ff);
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+    ::selection { background: var(--teal-dim); color: var(--teal); }
+
+    /* ─── SCROLLBAR ───────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 2px; }
+
+    /* ─── CANVAS / STARFIELD ─────────────────────────────────────────────── */
+    #starfield {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ─── NAV ─────────────────────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(6,6,15,0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em;
+      color: var(--teal);
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo span { color: var(--text); }
+    .nav-links {
+      display: flex; gap: 2rem; list-style: none;
+    }
+    .nav-links a {
+      font-size: .85rem; font-weight: 500; color: var(--muted);
+      text-decoration: none; letter-spacing: .03em;
+      transition: color .25s;
+    }
+    .nav-links a:hover { color: var(--teal); }
+    .nav-badge {
+      font-size: .75rem; font-weight: 700;
+      background: var(--teal-dim); color: var(--teal);
+      border: 1px solid var(--teal-glow);
+      padding: .25rem .75rem; border-radius: 999px;
+      letter-spacing: .06em;
+    }
+
+    /* ─── MAIN WRAPPER ───────────────────────────────────────────────────── */
+    main { position: relative; z-index: 1; }
+    section { padding: 6rem 2.5rem; max-width: 1200px; margin: 0 auto; }
+
+    /* ─── HERO ───────────────────────────────────────────────────────────── */
+    #hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      text-align: center;
+      padding-top: 8rem;
+      max-width: 100%;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: .5rem;
+      font-size: .8rem; font-weight: 600; letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--teal);
+      background: var(--teal-dim);
+      border: 1px solid rgba(0,212,170,.25);
+      padding: .35rem 1rem; border-radius: 999px;
+      margin-bottom: 2rem;
+      animation: fadeUp .8s ease both;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--teal);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: .5; transform: scale(1.5); }
+    }
+
+    .hero-title {
+      font-size: clamp(3rem, 8vw, 6.5rem);
+      font-weight: 900; line-height: 1;
+      letter-spacing: -.04em;
+      animation: fadeUp .8s .1s ease both;
+    }
+    .hero-title .accent-teal  { color: var(--teal); }
+    .hero-title .accent-purple{ color: var(--purple); }
+
+    .hero-sub {
+      margin-top: 1.5rem;
+      font-size: clamp(1rem, 2vw, 1.3rem);
+      color: var(--muted); max-width: 600px;
+      animation: fadeUp .8s .2s ease both;
+    }
+    .hero-sub strong { color: var(--text); }
+
+    .hero-cta {
+      margin-top: 3rem;
+      display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+      animation: fadeUp .8s .3s ease both;
+    }
+    .btn-primary {
+      background: var(--teal);
+      color: #000; font-weight: 700; font-size: .95rem;
+      padding: .85rem 2rem; border-radius: 12px;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 0 30px var(--teal-glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 50px var(--teal-glow);
+    }
+    .btn-ghost {
+      color: var(--text); font-weight: 600; font-size: .95rem;
+      padding: .85rem 2rem; border-radius: 12px;
+      text-decoration: none; border: 1px solid var(--border); cursor: pointer;
+      transition: border-color .2s, background .2s;
+      background: transparent;
+    }
+    .btn-ghost:hover { border-color: var(--teal); background: var(--teal-dim); }
+
+    /* floating QR mockup */
+    .hero-visual {
+      margin-top: 4rem;
+      position: relative;
+      animation: floatY 4s ease-in-out infinite;
+    }
+    @keyframes floatY {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-16px); }
+    }
+    .phone-mockup {
+      width: 220px; height: 420px;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      margin: 0 auto;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 1rem;
+      box-shadow: 0 40px 80px rgba(0,0,0,.5), 0 0 60px rgba(0,212,170,.08);
+      padding: 2rem 1.5rem;
+    }
+    .phone-status {
+      font-size: .7rem; color: var(--muted); font-family: var(--mono);
+      width: 100%; text-align: center;
+    }
+    .qr-box {
+      width: 120px; height: 120px;
+      background: white;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      padding: 8px;
+    }
+    .qr-inner {
+      width: 100%; height: 100%;
+      display: grid;
+      grid-template-columns: repeat(7,1fr);
+      grid-template-rows: repeat(7,1fr);
+      gap: 1px;
+    }
+    .qr-cell { border-radius: 1px; }
+    .phone-label {
+      font-size: .75rem; font-weight: 700;
+      color: var(--teal); text-align: center;
+      font-family: var(--mono);
+    }
+    .phone-name {
+      font-size: .85rem; color: var(--text); font-weight: 600;
+      text-align: center;
+    }
+    .phone-item {
+      font-size: .8rem; color: var(--muted); text-align: center;
+    }
+    .phone-check {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--teal); color: #000;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 700;
+      box-shadow: 0 0 20px var(--teal-glow);
+    }
+
+    /* glow rings */
+    .glow-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid;
+      animation: expandRing 3s ease-out infinite;
+      pointer-events: none;
+    }
+    .glow-ring:nth-child(1) { width: 260px; height: 260px; top: 50%; left: 50%; transform: translate(-50%,-50%); border-color: rgba(0,212,170,.15); animation-delay: 0s; }
+    .glow-ring:nth-child(2) { width: 340px; height: 340px; top: 50%; left: 50%; transform: translate(-50%,-50%); border-color: rgba(0,212,170,.08); animation-delay: 1s; }
+    .glow-ring:nth-child(3) { width: 420px; height: 420px; top: 50%; left: 50%; transform: translate(-50%,-50%); border-color: rgba(0,212,170,.04); animation-delay: 2s; }
+    @keyframes expandRing {
+      0%   { transform: translate(-50%,-50%) scale(.8); opacity: 1; }
+      100% { transform: translate(-50%,-50%) scale(1.3); opacity: 0; }
+    }
+
+    /* ─── SECTION HEADERS ─────────────────────────────────────────────────── */
+    .section-tag {
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-size: .75rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--teal);
+      margin-bottom: 1rem;
+    }
+    .section-tag::before {
+      content: ''; display: block;
+      width: 20px; height: 2px; background: var(--teal);
+    }
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800; letter-spacing: -.03em;
+      line-height: 1.1; margin-bottom: 1rem;
+    }
+    .section-desc {
+      color: var(--muted); max-width: 560px;
+      font-size: 1.05rem; margin-bottom: 3rem;
+    }
+
+    /* ─── PROBLEM SECTION ─────────────────────────────────────────────────── */
+    #problem { padding-top: 5rem; }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .problem-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      position: relative; overflow: hidden;
+      transition: transform .3s, border-color .3s;
+    }
+    .problem-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--coral), transparent);
+    }
+    .problem-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(244,132,95,.3);
+    }
+    .problem-icon {
+      font-size: 2.5rem; margin-bottom: 1rem;
+    }
+    .problem-card h3 {
+      font-size: 1.15rem; font-weight: 700; margin-bottom: .5rem;
+      color: var(--coral);
+    }
+    .problem-card p { font-size: .9rem; color: var(--muted); line-height: 1.6; }
+    .problem-stat {
+      margin-top: 1rem;
+      font-size: 2rem; font-weight: 900;
+      color: var(--coral);
+      font-family: var(--mono);
+    }
+    .problem-stat span { font-size: .85rem; font-weight: 400; color: var(--muted); }
+
+    /* ─── SOLUTION ────────────────────────────────────────────────────────── */
+    #solution .sol-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: center;
+    }
+    .sol-motto {
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      font-weight: 900; line-height: 1.15;
+      letter-spacing: -.03em;
+    }
+    .sol-motto .line2 { color: var(--teal); }
+    .sol-desc { color: var(--muted); margin-top: 1.5rem; font-size: 1rem; line-height: 1.8; }
+    .sol-tags {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+      margin-top: 2rem;
+    }
+    .tag {
+      font-size: .78rem; font-weight: 600;
+      padding: .35rem .9rem; border-radius: 999px;
+      border: 1px solid;
+    }
+    .tag-teal   { color: var(--teal);   border-color: rgba(0,212,170,.3);   background: var(--teal-dim); }
+    .tag-purple { color: var(--purple); border-color: rgba(139,92,246,.3);  background: var(--purple-dim); }
+    .tag-coral  { color: var(--coral);  border-color: rgba(244,132,95,.3);  background: var(--coral-dim); }
+
+    /* ─── HOW IT WORKS ────────────────────────────────────────────────────── */
+    #howitworks { background: linear-gradient(180deg, transparent, rgba(139,92,246,.04), transparent); }
+    .flow-steps {
+      display: flex; flex-direction: column; gap: 0;
+      position: relative; max-width: 700px; margin: 0 auto;
+    }
+    .flow-step {
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      gap: 1.5rem; align-items: flex-start;
+      padding: 1.5rem 0;
+      opacity: 0; transform: translateX(-30px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .flow-step.visible { opacity: 1; transform: translateX(0); }
+    .step-num {
+      width: 60px; height: 60px; flex-shrink: 0;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 900;
+      font-family: var(--mono);
+    }
+    .step-num.c-teal   { background: var(--teal-dim);   color: var(--teal);   border: 1px solid rgba(0,212,170,.3); }
+    .step-num.c-purple { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(139,92,246,.3); }
+    .step-num.c-coral  { background: var(--coral-dim);  color: var(--coral);  border: 1px solid rgba(244,132,95,.3); }
+
+    .step-connector {
+      position: absolute; left: 29px;
+      width: 2px; background: linear-gradient(180deg, var(--teal), var(--purple), var(--coral));
+      top: 74px; bottom: 60px;
+      opacity: .2; border-radius: 1px;
+    }
+    .step-content h3 {
+      font-size: 1.05rem; font-weight: 700; margin-bottom: .3rem;
+    }
+    .step-content p { color: var(--muted); font-size: .9rem; }
+    .step-time {
+      display: inline-block;
+      font-size: .7rem; font-weight: 700;
+      font-family: var(--mono);
+      color: var(--teal); letter-spacing: .06em;
+      background: var(--teal-dim);
+      padding: .15rem .5rem; border-radius: 4px;
+      margin-bottom: .4rem;
+    }
+
+    /* ─── FEATURES BENTO ─────────────────────────────────────────────────── */
+    #features .bento {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: auto auto;
+      gap: 1.25rem;
+    }
+    .bento-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2rem;
+      transition: transform .3s, border-color .3s, box-shadow .3s;
+      position: relative; overflow: hidden;
+    }
+    .bento-card:hover {
+      transform: translateY(-4px);
+    }
+    .bento-card.wide { grid-column: span 2; }
+    .bento-card.tall { grid-row: span 2; }
+
+    .bento-card.accent-teal   { border-top: 2px solid var(--teal);   }
+    .bento-card.accent-purple { border-top: 2px solid var(--purple); }
+    .bento-card.accent-coral  { border-top: 2px solid var(--coral);  }
+    .bento-card.accent-yellow { border-top: 2px solid var(--yellow); }
+
+    .bento-card:hover.accent-teal   { box-shadow: 0 20px 60px rgba(0,212,170,.1); border-color: rgba(0,212,170,.3); }
+    .bento-card:hover.accent-purple { box-shadow: 0 20px 60px rgba(139,92,246,.1); border-color: rgba(139,92,246,.3); }
+    .bento-card:hover.accent-coral  { box-shadow: 0 20px 60px rgba(244,132,95,.1); border-color: rgba(244,132,95,.3); }
+
+    .bento-icon { font-size: 2rem; margin-bottom: .8rem; }
+    .bento-label {
+      font-size: .7rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: .4rem;
+    }
+    .bento-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
+    .bento-card p  { font-size: .875rem; color: var(--muted); line-height: 1.6; }
+    .bento-big-num {
+      font-size: 4rem; font-weight: 900; font-family: var(--mono);
+      line-height: 1; margin: .5rem 0;
+    }
+    .bento-feature-list {
+      list-style: none; margin-top: 1rem;
+      display: flex; flex-direction: column; gap: .6rem;
+    }
+    .bento-feature-list li {
+      display: flex; align-items: center; gap: .6rem;
+      font-size: .875rem; color: var(--muted);
+    }
+    .bento-feature-list li::before {
+      content: '→'; color: var(--teal); font-weight: 700; flex-shrink: 0;
+    }
+
+    /* ─── TECH STACK ─────────────────────────────────────────────────────── */
+    #tech .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .tech-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex; flex-direction: column; align-items: center;
+      gap: .75rem; text-align: center;
+      transition: transform .25s, border-color .25s;
+    }
+    .tech-card:hover { transform: translateY(-4px); border-color: var(--teal); }
+    .tech-logo {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+    .tech-card h4 { font-size: .95rem; font-weight: 700; }
+    .tech-card p  { font-size: .8rem; color: var(--muted); }
+
+
+
+    /* ─── ROADMAP ─────────────────────────────────────────────────────────── */
+    #roadmap .roadmap-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+    .roadmap-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      transition: transform .25s;
+    }
+    .roadmap-card:hover { transform: translateY(-4px); }
+    .roadmap-phase {
+      font-size: .7rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; margin-bottom: .5rem;
+    }
+    .phase-now   { color: var(--teal); }
+    .phase-soon  { color: var(--purple); }
+    .phase-later { color: var(--coral); }
+    .roadmap-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .75rem; }
+    .roadmap-card ul { list-style: none; display: flex; flex-direction: column; gap: .4rem; }
+    .roadmap-card li { font-size: .875rem; color: var(--muted); display: flex; gap: .5rem; }
+    .roadmap-card li::before { color: var(--teal); content: '✓'; flex-shrink: 0; }
+    .roadmap-card.soon li::before  { color: var(--purple); content: '◷'; }
+    .roadmap-card.later li::before { color: var(--coral);  content: '→'; }
+
+    /* ─── FOOTER CTA ──────────────────────────────────────────────────────── */
+    #cta {
+      text-align: center;
+      padding: 8rem 2.5rem;
+    }
+    .cta-inner {
+      max-width: 700px; margin: 0 auto;
+    }
+    .cta-inner h2 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900; letter-spacing: -.04em;
+      margin-bottom: 1rem;
+    }
+    .cta-inner p { color: var(--muted); font-size: 1.05rem; margin-bottom: 2.5rem; }
+    .cta-glow {
+      position: relative; display: inline-block;
+    }
+    .cta-glow::before {
+      content: '';
+      position: absolute;
+      inset: -40px;
+      background: radial-gradient(circle, rgba(0,212,170,.15), transparent 70%);
+      pointer-events: none;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 2.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: .8rem; color: var(--muted);
+    }
+    footer strong { color: var(--teal); }
+
+    /* ─── ANIMATIONS ──────────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ─── RESPONSIVE ──────────────────────────────────────────────────────── */
+    /* ─── BUSINESS SECTION ───────────────────────────────────────────────── */
+    #business { background: linear-gradient(180deg, transparent, rgba(245,197,24,.03), transparent); }
+
+    /* Revenue model cards */
+    .rev-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 3rem;
+    }
+    .rev-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem 1.75rem;
+      position: relative; overflow: hidden;
+      transition: transform .3s, border-color .3s;
+    }
+    .rev-card:hover { transform: translateY(-5px); }
+    .rev-card.primary {
+      border-color: rgba(245,197,24,.3);
+      background: linear-gradient(135deg, rgba(245,197,24,.07), rgba(245,197,24,.02));
+    }
+    .rev-card.primary::before {
+      content: 'FŐ MODELL';
+      position: absolute; top: 1rem; right: 1rem;
+      font-size: .6rem; font-weight: 800; letter-spacing: .14em;
+      color: var(--yellow);
+      background: rgba(245,197,24,.15);
+      border: 1px solid rgba(245,197,24,.3);
+      padding: .2rem .5rem; border-radius: 4px;
+    }
+    .rev-icon { font-size: 2rem; margin-bottom: 1rem; }
+    .rev-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .4rem; }
+    .rev-card p  { font-size: .875rem; color: var(--muted); line-height: 1.6; }
+    .rev-price {
+      margin-top: 1.25rem;
+      font-size: 2rem; font-weight: 900;
+      font-family: var(--mono); color: var(--yellow);
+      line-height: 1;
+    }
+    .rev-price span { font-size: .85rem; font-weight: 400; color: var(--muted); }
+
+    /* Revenue chart */
+    .chart-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2.5rem;
+      margin-bottom: 3rem;
+    }
+    .chart-header {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 2rem;
+    }
+    .chart-header h3 { font-size: 1.15rem; font-weight: 700; }
+    .chart-header p  { font-size: .85rem; color: var(--muted); }
+    .chart-legend {
+      display: flex; gap: 1.25rem; flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: .4rem;
+      font-size: .78rem; color: var(--muted);
+    }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .bars-area {
+      display: flex; align-items: flex-end;
+      gap: .75rem; height: 200px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+    .bar-group {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: .4rem;
+    }
+    .bar-stack {
+      width: 100%; display: flex; flex-direction: column;
+      align-items: center; gap: 2px;
+      justify-content: flex-end;
+    }
+    .bar-seg {
+      width: 100%; border-radius: 4px 4px 0 0;
+      min-height: 0;
+      transition: height 1.2s cubic-bezier(.4,0,.2,1);
+      height: 0;
+    }
+    .bar-seg.b-saas   { background: var(--teal);   }
+    .bar-seg.b-share  { background: var(--purple); }
+    .bar-seg.b-other  { background: var(--yellow); }
+    .bar-label {
+      font-size: .72rem; color: var(--muted); font-family: var(--mono);
+      text-align: center; margin-top: .5rem;
+    }
+    .bar-val {
+      font-size: .7rem; font-weight: 700;
+      color: var(--teal); font-family: var(--mono);
+    }
+
+    /* Unit economics */
+    .econ-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 3rem;
+    }
+    .econ-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+    }
+    .econ-card h3 {
+      font-size: .9rem; font-weight: 700;
+      color: var(--muted); letter-spacing: .05em;
+      text-transform: uppercase; margin-bottom: 1.5rem;
+    }
+    .econ-row {
+      display: flex; justify-content: space-between;
+      align-items: center;
+      padding: .65rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .9rem;
+    }
+    .econ-row:last-child { border-bottom: none; }
+    .econ-row .label { color: var(--muted); }
+    .econ-row .val   { font-weight: 700; font-family: var(--mono); }
+    .econ-row .val.green  { color: var(--teal); }
+    .econ-row .val.red    { color: var(--coral); }
+    .econ-row .val.yellow { color: var(--yellow); }
+    .econ-row.total {
+      margin-top: .5rem;
+      padding-top: 1rem;
+      border-top: 2px solid var(--border);
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    /* ROI meter */
+    .roi-meter {
+      background: var(--card);
+      border: 1px solid rgba(0,212,170,.2);
+      border-radius: 20px;
+      padding: 2rem;
+      text-align: center;
+    }
+    .roi-label { font-size: .8rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: .5rem; }
+    .roi-val   { font-size: 3.5rem; font-weight: 900; font-family: var(--mono); color: var(--teal); line-height: 1; }
+    .roi-desc  { font-size: .85rem; color: var(--muted); margin-top: .5rem; }
+
+    /* Scale map */
+    .scale-track {
+      display: flex; gap: 0;
+      position: relative;
+      margin-top: 1rem;
+    }
+    .scale-track::before {
+      content: '';
+      position: absolute; top: 24px; left: 24px; right: 24px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--teal), var(--purple), var(--coral), var(--yellow));
+      opacity: .3;
+    }
+    .scale-node {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: .75rem;
+      text-align: center;
+    }
+    .scale-dot {
+      width: 48px; height: 48px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0;
+      position: relative; z-index: 1;
+    }
+    .scale-dot.s1 { background: var(--teal-dim);   border: 2px solid var(--teal);   }
+    .scale-dot.s2 { background: var(--purple-dim); border: 2px solid var(--purple); }
+    .scale-dot.s3 { background: var(--coral-dim);  border: 2px solid var(--coral);  }
+    .scale-dot.s4 { background: rgba(245,197,24,.15); border: 2px solid var(--yellow); }
+    .scale-node h4 { font-size: .85rem; font-weight: 700; }
+    .scale-node p  { font-size: .78rem; color: var(--muted); }
+    .scale-node .s-rev {
+      font-size: .8rem; font-weight: 800;
+      font-family: var(--mono);
+    }
+    .scale-node .s-rev.c-teal   { color: var(--teal); }
+    .scale-node .s-rev.c-purple { color: var(--purple); }
+    .scale-node .s-rev.c-coral  { color: var(--coral); }
+    .scale-node .s-rev.c-yellow { color: var(--yellow); }
+
+    @media (max-width: 900px) {
+      .problem-grid       { grid-template-columns: 1fr; }
+      #solution .sol-wrap { grid-template-columns: 1fr; }
+      #features .bento    { grid-template-columns: 1fr; }
+      .bento-card.wide    { grid-column: span 1; }
+      #tech .tech-grid    { grid-template-columns: 1fr 1fr; }
+      .roadmap-grid       { grid-template-columns: 1fr; }
+      .rev-grid           { grid-template-columns: 1fr; }
+      .econ-grid          { grid-template-columns: 1fr; }
+      .scale-track        { flex-direction: column; gap: 2rem; }
+      .scale-track::before { display: none; }
+      .nav-links          { display: none; }
+    }
+    @media (max-width: 600px) {
+      section { padding: 4rem 1.25rem; }
+      nav     { padding: .75rem 1.25rem; }
+      #tech .tech-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ░ STARFIELD ░ -->
+<canvas id="starfield"></canvas>
+
+<!-- ░ NAV ░ -->
+<nav aria-label="Főnavigáció">
+  <div class="nav-logo">TóthBüfé <span>QR</span></div>
+  <ul class="nav-links" role="list">
+    <li><a href="#problem">Probléma</a></li>
+    <li><a href="#solution">Megoldás</a></li>
+    <li><a href="#howitworks">Működés</a></li>
+    <li><a href="#features">Funkciók</a></li>
+    <li><a href="#business">Biznis</a></li>
+  </ul>
+  <span class="nav-badge">Hackathon 2026</span>
+</nav>
+
+<main>
+<!-- ─────────────────── HERO ─────────────────────────────────────────────── -->
+<section id="hero" aria-label="Bemutatás">
+  <div class="hero-eyebrow">Student Life kategória · Tóth János Technikum</div>
+
+  <h1 class="hero-title">
+    Vége a<br/>
+    <span class="accent-teal">sorban</span>
+    <span class="accent-purple"> állásnak</span>
+  </h1>
+
+  <p class="hero-sub">
+    A <strong>TóthBüfé QR Gyorsrendelő</strong> segítségével a diákok előre rendelnek,
+    nagyszünetben csak <strong>átveszik</strong> a csomagot.
+  </p>
+
+  <div class="hero-cta">
+    <a href="#howitworks" class="btn-primary">Hogyan működik?</a>
+    <a href="#features"   class="btn-ghost">Funkciók →</a>
+  </div>
+
+  <div class="hero-visual" aria-hidden="true">
+    <div class="glow-ring"></div>
+    <div class="glow-ring"></div>
+    <div class="glow-ring"></div>
+    <div class="phone-mockup">
+      <div class="phone-status">9:47 · Tóth WiFi ●</div>
+      <div class="qr-box" id="qr-display"></div>
+      <div class="phone-label">EGYEDI QR-KÓD</div>
+      <div class="phone-name">Kovács Ádám · 10/A</div>
+      <div class="phone-item">🥪 Sajtos szendvics · 450 Ft</div>
+      <div class="phone-check">✓</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── PROBLEM ──────────────────────────────────────────── -->
+<section id="problem" aria-label="A probléma">
+  <div class="section-tag">Azonosított probléma</div>
+  <h2 class="section-title reveal">Mi a baj<br/>a büfénél?</h2>
+  <p class="section-desc reveal">
+    Minden diák ismeri ezt az érzést. 10 perces szünet, de a büféig alig jut el az ember.
+  </p>
+
+  <div class="problem-grid">
+    <div class="problem-card reveal">
+      <div class="problem-icon">⏱️</div>
+      <h3>Elvesztegetett idő</h3>
+      <p>A nagyszünet felét sorban töltik a diákok – ahelyett, hogy ennének, feltöltődnének.</p>
+      <div class="problem-stat">5–7 <span>perc / szünet</span></div>
+    </div>
+    <div class="problem-card reveal">
+      <div class="problem-icon">😤</div>
+      <h3>Stressz & káosz</h3>
+      <p>Egyszerre rohan mindenki. A büfés kapkod, a diákok tolonganak – rossz hangulat keletkezik.</p>
+      <div class="problem-stat">~150 <span>diák egyszerre</span></div>
+    </div>
+    <div class="problem-card reveal">
+      <div class="problem-icon">🍔</div>
+      <h3>Kimarad az ebéd</h3>
+      <p>Aki hátul van a sorban, éhesen megy vissza az órára – ez rontja a koncentrációt és a teljesítményt.</p>
+      <div class="problem-stat">30% <span>nem ér sorra</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── SOLUTION ─────────────────────────────────────────── -->
+<section id="solution" aria-label="A megoldás">
+  <div class="sol-wrap">
+    <div>
+      <div class="section-tag">A megoldás</div>
+      <h2 class="section-title reveal">
+        <span style="color:var(--teal)">QR-kód</span> + weboldal<br/>kombináció
+      </h2>
+      <div class="sol-motto reveal">
+        <div>Rendelj előre,</div>
+        <div class="line2">vedd át azonnal.</div>
+      </div>
+      <p class="sol-desc reveal">
+        Egy mobilbarát webalkalmazás, amelyen a diákok az első óráról leadják a rendelésüket.
+        Azonnal kapnak egy egyedi QR-kódot a telefonjukra.
+        Nagyszünetben odamennek, felmutatják a kódot – és elindulnak enni.
+        <strong style="color:var(--text)">Sor nélkül.</strong>
+      </p>
+      <div class="sol-tags reveal">
+        <span class="tag tag-teal">📱 Mobilbarát weboldal</span>
+        <span class="tag tag-purple">QR-kód generálás</span>
+        <span class="tag tag-coral">⚡ Valós idejű adatbázis</span>
+        <span class="tag tag-teal">🔒 Visszaélés-védelem</span>
+        <span class="tag tag-purple">📊 Admin panel</span>
+      </div>
+    </div>
+
+    <!-- mini screens -->
+    <div style="display:flex;flex-direction:column;gap:1rem;" aria-hidden="true">
+      <div class="bento-card accent-teal reveal" style="padding:1.25rem;">
+        <div class="bento-label">Diák képernyő</div>
+        <h3>📋 Menükártya</h3>
+        <p style="font-size:.82rem;color:var(--muted)">Fotós termékek, ár, visszaszámláló a rendelési határidőig</p>
+      </div>
+      <div class="bento-card accent-purple reveal" style="padding:1.25rem;">
+        <div class="bento-label">Rendelési folyamat</div>
+        <h3>🛒 Gyors kiválasztás</h3>
+        <p style="font-size:.82rem;color:var(--muted)">Nagy gombok, osztály kiválasztó, összesítő – 3 lépés</p>
+      </div>
+      <div class="bento-card accent-coral reveal" style="padding:1.25rem;">
+        <div class="bento-label">Büfés panel</div>
+        <h3>🖥️ Admin felület</h3>
+        <p style="font-size:.82rem;color:var(--muted)">Rendelések listája, zöld pipa az átvételkor, statisztikák</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── HOW IT WORKS ─────────────────────────────────────── -->
+<section id="howitworks" aria-label="Hogyan működik">
+  <div class="section-tag">Lépésről lépésre</div>
+  <h2 class="section-title reveal">Hogyan működik?</h2>
+  <p class="section-desc reveal">Hat lépés – és minden reggel gördülékenyen megy.</p>
+
+  <div class="flow-steps" role="list">
+    <div class="step-connector" aria-hidden="true"></div>
+
+    <div class="flow-step" role="listitem">
+      <div class="step-num c-teal">1</div>
+      <div class="step-content">
+        <span class="step-time">07:00 – 08:45</span>
+        <h3>Weboldal megnyitása</h3>
+        <p>A diák telefonon, az iskolai WiFi-n megnyitja a TóthBüfé weboldalt. Nincs app letöltés, nincs regisztráció.</p>
+      </div>
+    </div>
+
+    <div class="flow-step" role="listitem">
+      <div class="step-num c-teal">2</div>
+      <div class="step-content">
+        <span class="step-time">Egy kattintás</span>
+        <h3>Étel kiválasztása</h3>
+        <p>Nagy, fotós kártyákon látja a napi menüt. Kiválaszt egy terméket – semmi bonyolult ármátrix.</p>
+      </div>
+    </div>
+
+    <div class="flow-step" role="listitem">
+      <div class="step-num c-purple">3</div>
+      <div class="step-content">
+        <span class="step-time">5 másodperc</span>
+        <h3>Adatok megadása</h3>
+        <p>Neve + osztálya (pl. 10/A). Ennyi. Nincs jelszó, nincs email-regisztráció.</p>
+      </div>
+    </div>
+
+    <div class="flow-step" role="listitem">
+      <div class="step-num c-purple">4</div>
+      <div class="step-content">
+        <span class="step-time">Azonnal</span>
+        <h3>QR-kód megjelenik</h3>
+        <p>A rendszer generál egy egyedi QR-kódot. Csak aznap érvényes, csak az adott rendeléshez.</p>
+      </div>
+    </div>
+
+    <div class="flow-step" role="listitem">
+      <div class="step-num c-coral">5</div>
+      <div class="step-content">
+        <span class="step-time">Nagyszünetben</span>
+        <h3>Kód felmutatása</h3>
+        <p>A diák odamegy a büféhez és felmutatja a telefon képernyőjét. A büfés beolvassa vagy vizuálisan ellenőrzi.</p>
+      </div>
+    </div>
+
+    <div class="flow-step" role="listitem">
+      <div class="step-num c-coral">6</div>
+      <div class="step-content">
+        <span class="step-time">✅ Kész!</span>
+        <h3>Azonnali átvétel</h3>
+        <p>A büfés pipálja a rendelést az admin panelen – "Felhasználva" státusz. A diák elindul enni. Sor? Nulla.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── FEATURES BENTO ───────────────────────────────────── -->
+<section id="features" aria-label="Funkciók">
+  <div class="section-tag">Funkciók</div>
+  <h2 class="section-title reveal">Minden, ami kell</h2>
+  <p class="section-desc reveal">Két felület, egy rendszer – diákoknak és büfésnek egyaránt.</p>
+
+  <div class="bento">
+    <div class="bento-card wide accent-teal reveal">
+      <div class="bento-icon">📱</div>
+      <div class="bento-label">Diák felület</div>
+      <h3>Mobilbarát menükártya</h3>
+      <p>Fotók, ár, visszaszámláló – minden fontos info egy képernyőn. Zöld / piros jelzés a készletről.</p>
+      <ul class="bento-feature-list">
+        <li>Fotós termékek, napi menü</li>
+        <li>Visszaszámláló a rendelési határidőig</li>
+        <li>Zöld = elérhető · Piros = elfogyott</li>
+      </ul>
+    </div>
+
+    <div class="bento-card accent-purple reveal">
+      <div class="bento-icon">⚡</div>
+      <div class="bento-label">Sebesség</div>
+      <h3>3 lépéses rendelés</h3>
+      <p>Kiválaszt → Megad adatot → Kap QR-t. Átlagos rendelési idő: <strong style="color:var(--teal)">kevesebb mint 30 mp.</strong></p>
+    </div>
+
+    <div class="bento-card tall accent-coral reveal">
+      <div class="bento-icon">🖥️</div>
+      <div class="bento-label">Büfés admin panel</div>
+      <h3>Teljes kontroll</h3>
+      <p>Laptopon vagy táblagépen fut. Valós idejű frissítés.</p>
+      <ul class="bento-feature-list" style="margin-top:1rem;">
+        <li>Beérkező rendelések listája</li>
+        <li>Zöld pipa – átvett rendelés</li>
+        <li>Termék elfogyott – 1 gombos jelzés</li>
+        <li>Napi forgalmi statisztika</li>
+        <li>Legkeresettebb termékek grafikonja</li>
+      </ul>
+    </div>
+
+    <div class="bento-card accent-teal reveal">
+      <div class="bento-label">Időmegtakarítás / diák</div>
+      <div class="bento-big-num" style="color:var(--teal)">5 perc</div>
+      <p>Naponta visszakapott idő minden diáknak</p>
+    </div>
+
+    <div class="bento-card accent-purple reveal">
+      <div class="bento-icon">🔒</div>
+      <div class="bento-label">Biztonság</div>
+      <h3>Visszaélés-védelem</h3>
+      <p>Rendelt = egyszer felhasználható. Kód másnap már nem érvényes. Kettős rendelés kizárva.</p>
+    </div>
+
+    <div class="bento-card wide accent-yellow reveal">
+      <div class="bento-icon">📊</div>
+      <div class="bento-label">Büfés előny</div>
+      <h3>Előre tudja, mit kell elkészíteni</h3>
+      <p>A büfés <strong style="color:var(--yellow)">08:45-re</strong> látja az összes rendelést és előkészíti a csomagokat. Nincs veszteség, nincs kapkodás.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── TECH STACK ───────────────────────────────────────── -->
+<section id="tech" aria-label="Technológia">
+  <div class="section-tag">Technológia</div>
+  <h2 class="section-title reveal">Egyszerű, ingyenes, működő</h2>
+  <p class="section-desc reveal">Minden eszköz ingyenes és azonnal elérhető. Nem kell szerver, nem kell telepítés.</p>
+
+  <div class="tech-grid">
+    <div class="tech-card reveal">
+      <div class="tech-logo" style="background:rgba(255,165,0,.15);color:#FFA500;">🌐</div>
+      <h4>HTML + CSS + JS</h4>
+      <p>A diák felület – telefonon fut, nincs app letöltés</p>
+    </div>
+    <div class="tech-card reveal">
+      <div class="tech-logo" style="background:rgba(0,212,170,.15);color:var(--teal);">▣</div>
+      <h4>qrcode.js</h4>
+      <p>Ingyenes JS könyvtár – másodpercek alatt generál QR-t a böngészőben</p>
+    </div>
+    <div class="tech-card reveal">
+      <div class="tech-logo" style="background:rgba(255,160,0,.15);color:#FFA500;">🔥</div>
+      <h4>Google Firebase</h4>
+      <p>Ingyenes, valós idejű adatbázis – nincs saját szerver szükséges</p>
+    </div>
+    <div class="tech-card reveal">
+      <div class="tech-logo" style="background:rgba(139,92,246,.15);color:var(--purple);">🖥️</div>
+      <h4>Admin panel</h4>
+      <p>Ugyanaz a weboldal – admin URL-lel nyílik a büfés felület</p>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- ─────────────────── ROADMAP ───────────────────────────────────────────── -->
+<section id="roadmap" aria-label="Fejlesztési ütemterv">
+  <div class="section-tag">Jövőbeli fejlesztések</div>
+  <h2 class="section-title reveal">Ha kérdezik: merre tovább?</h2>
+
+  <div class="roadmap-grid">
+    <div class="roadmap-card reveal">
+      <div class="roadmap-phase phase-now">✅ Most – MVP</div>
+      <h3>Alap rendszer</h3>
+      <ul>
+        <li>Mobilbarát weboldal</li>
+        <li>QR-kód generálás</li>
+        <li>Firebase adatbázis</li>
+        <li>Büfés admin panel</li>
+      </ul>
+    </div>
+    <div class="roadmap-card soon reveal">
+      <div class="roadmap-phase phase-soon">◷ Hamarosan</div>
+      <h3>Bővítések</h3>
+      <ul>
+        <li>Viber / Messenger chatbot</li>
+        <li>Push értesítés átvételkor</li>
+        <li>Diákkártya egyenleg fizetés</li>
+        <li>Heti menü előtöltés</li>
+      </ul>
+    </div>
+    <div class="roadmap-card later reveal">
+      <div class="roadmap-phase phase-later">→ Hosszabb távon</div>
+      <h3>Skálázhatóság</h3>
+      <ul>
+        <li>Tanári rendelési panel</li>
+        <li>Büfés analitika dashboard</li>
+        <li>Más iskolákba exportálás</li>
+        <li>Ösztöndíj-pontrendszer</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── BUSINESS ────────────────────────────────────────────── -->
+<section id="business" aria-label="Üzleti modell">
+  <div class="section-tag">Üzleti modell</div>
+  <h2 class="section-title reveal">Hogyan lesz ebből <span style="color:var(--yellow)">pénz?</span></h2>
+  <p class="section-desc reveal">Egy iskolai startup, amely SaaS modellel skálázható – helyi ötletből országos megoldás.</p>
+
+  <!-- Revenue model cards -->
+  <div class="rev-grid">
+    <div class="rev-card primary reveal">
+      <div class="rev-icon">💼</div>
+      <h3>SaaS előfizetés (B2B)</h3>
+      <p>Az iskola (vagy a büfé bérlője) havi előfizetési díjat fizet. Egyszer beállítva – minden hónapban ismétlő bevétel.</p>
+      <div class="rev-price">15 000 Ft<span> / hó / iskola</span></div>
+    </div>
+    <div class="rev-card reveal">
+      <div class="rev-icon">🤝</div>
+      <h3>Bevétel-megosztás (Revenue share)</h3>
+      <p>Nincs fix díj – a büfés napi forgalmának 2–3%-a kerül a fejlesztőhöz. Minél többet ad el, mindkettőnek jobb.</p>
+      <div class="rev-price">~30 000 Ft<span> / hó (átlag)</span></div>
+    </div>
+    <div class="rev-card reveal">
+      <div class="rev-icon">🏷️</div>
+      <h3>White-label licensz</h3>
+      <p>Más iskolák testreszabott változatot vásárolnak. Saját arculat, saját domain – egyszeri licenszdíj + éves karbantartás.</p>
+      <div class="rev-price">80 000 Ft<span> / egyszeri setup</span></div>
+    </div>
+  </div>
+
+  <!-- Revenue projection bar chart -->
+  <div class="chart-wrap reveal">
+    <div class="chart-header">
+      <div>
+        <h3>Árbevétel-előrejelzés</h3>
+        <p>Reális becslés – 1 iskolával indulva</p>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>SaaS előfizetés</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Revenue share</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>White-label</div>
+      </div>
+    </div>
+    <div class="bars-area" id="revenue-chart" aria-label="Bevétel chart">
+      <!-- JS tölti fel -->
+    </div>
+    <div style="display:flex;gap:.75rem;margin-top:.75rem;">
+      <!-- labels JS tölti -->
+    </div>
+  </div>
+
+  <!-- Unit economics + ROI -->
+  <div class="econ-grid">
+    <div class="econ-card reveal">
+      <h3>💰 Indulási költségek (MVP)</h3>
+      <div class="econ-row"><span class="label">Domain név (1 év)</span><span class="val red">5 000 Ft</span></div>
+      <div class="econ-row"><span class="label">Firebase (ingyenes tier)</span><span class="val green">0 Ft</span></div>
+      <div class="econ-row"><span class="label">Hosting (GitHub Pages)</span><span class="val green">0 Ft</span></div>
+      <div class="econ-row"><span class="label">Fejlesztési idő (önkéntes)</span><span class="val yellow">~40 óra</span></div>
+      <div class="econ-row"><span class="label">Design &amp; tesztelés</span><span class="val red">0 Ft</span></div>
+      <div class="econ-row total"><span class="label">Összesen (pénzben)</span><span class="val green">≈ 5 000 Ft</span></div>
+    </div>
+    <div class="econ-card reveal">
+      <h3>📈 Havi üzemeltetési költség</h3>
+      <div class="econ-row"><span class="label">Firebase (Blaze plan, 5 iskolánál)</span><span class="val red">~2 000 Ft</span></div>
+      <div class="econ-row"><span class="label">Domain megújítás</span><span class="val red">~420 Ft</span></div>
+      <div class="econ-row"><span class="label">Support / karbantartás</span><span class="val yellow">2–4 óra/hó</span></div>
+      <div class="econ-row"><span class="label">Marketing (word-of-mouth)</span><span class="val green">0 Ft</span></div>
+      <div class="econ-row total"><span class="label">Havi fix kiadás</span><span class="val green">≈ 2 420 Ft</span></div>
+    </div>
+  </div>
+
+  <!-- ROI kártya + megtérülés -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;margin-bottom:3rem;">
+    <div class="roi-meter reveal">
+      <div class="roi-label">Megtérülés</div>
+      <div class="roi-val">1 hó</div>
+      <div class="roi-desc">Az első előfizetéssel a teljes MVP-költség megtérül</div>
+    </div>
+    <div class="roi-meter reveal" style="border-color:rgba(139,92,246,.2);">
+      <div class="roi-label">Profit margin</div>
+      <div class="roi-val" style="color:var(--purple)">~84%</div>
+      <div class="roi-desc">5 iskolánál: 75 000 Ft bevétel – 12 000 Ft kiadás</div>
+    </div>
+    <div class="roi-meter reveal" style="border-color:rgba(245,197,24,.2);">
+      <div class="roi-label">Éves potenciál</div>
+      <div class="roi-val" style="color:var(--yellow)">1,5M Ft</div>
+      <div class="roi-desc">10 iskolával, mixed modellel, 3. évben</div>
+    </div>
+  </div>
+
+  <!-- Scaling map -->
+  <div class="section-tag" style="margin-bottom:1rem;">Skálázási stratégia</div>
+  <h3 class="reveal" style="font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.5rem;">Helyi ötletből <span style="color:var(--yellow)">országos platform</span></h3>
+  <p class="reveal" style="color:var(--muted);margin-bottom:2.5rem;font-size:.95rem;">Nem kell egyszerre mindent – lépésről lépésre, nulláról indulva.</p>
+
+  <div class="scale-track reveal">
+    <div class="scale-node">
+      <div class="scale-dot s1">🏫</div>
+      <h4>1. Tóth Technikum</h4>
+      <p>MVP prototípus<br/>Ingyenes pilot</p>
+      <span class="s-rev c-teal">0 → 15 000 Ft/hó</span>
+    </div>
+    <div class="scale-node">
+      <div class="scale-dot s2">🏙️</div>
+      <h4>2. Régió (5 iskola)</h4>
+      <p>Csongrád-Csanád megye<br/>Word-of-mouth terjedés</p>
+      <span class="s-rev c-purple">75 000 Ft/hó</span>
+    </div>
+    <div class="scale-node">
+      <div class="scale-dot s3">🗺️</div>
+      <h4>3. Országos (20+ iskola)</h4>
+      <p>White-label ajánlat<br/>Iskolai hálózatok</p>
+      <span class="s-rev c-coral">300 000 Ft/hó</span>
+    </div>
+    <div class="scale-node">
+      <div class="scale-dot s4">🚀</div>
+      <h4>4. Platform (50+ iskola)</h4>
+      <p>Automatizált onboarding<br/>Digitális fizetés modul</p>
+      <span class="s-rev c-yellow">1,2M+ Ft/hó</span>
+    </div>
+  </div>
+
+  <!-- Competitive advantage strip -->
+  <div style="margin-top:3rem;background:linear-gradient(135deg,rgba(0,212,170,.07),rgba(139,92,246,.07));border:1px solid var(--border);border-radius:20px;padding:2rem;" class="reveal">
+    <div class="section-tag" style="margin-bottom:1rem;">Versenyelőny</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;">
+      <div>
+        <div style="font-size:1.5rem;margin-bottom:.4rem;">⚡</div>
+        <h4 style="font-size:.9rem;font-weight:700;margin-bottom:.3rem;">Nincs konkurens</h4>
+        <p style="font-size:.8rem;color:var(--muted);">Magyar iskolai büfé-rendelő app nem létezik a piacon</p>
+      </div>
+      <div>
+        <div style="font-size:1.5rem;margin-bottom:.4rem;">💸</div>
+        <h4 style="font-size:.9rem;font-weight:700;margin-bottom:.3rem;">Szinte nulla tőke</h4>
+        <p style="font-size:.8rem;color:var(--muted);">Firebase + GitHub Pages = 5000 Ft-os indulás</p>
+      </div>
+      <div>
+        <div style="font-size:1.5rem;margin-bottom:.4rem;">📣</div>
+        <h4 style="font-size:.9rem;font-weight:700;margin-bottom:.3rem;">Organikus terjedés</h4>
+        <p style="font-size:.8rem;color:var(--muted);">Minden diák reklámozza, aki nem áll sorban</p>
+      </div>
+      <div>
+        <div style="font-size:1.5rem;margin-bottom:.4rem;">🔄</div>
+        <h4 style="font-size:.9rem;font-weight:700;margin-bottom:.3rem;">Ismétlő bevétel</h4>
+        <p style="font-size:.8rem;color:var(--muted);">SaaS = minden hónapban automatikus bevétel churning nélkül</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── CTA ───────────────────────────────────────────────── -->
+<section id="cta" aria-label="Felhívás">
+  <div class="cta-inner">
+    <div class="cta-glow">
+      <h2 class="reveal">Valódi diákok.<br/>Valódi probléma.<br/><span style="color:var(--teal)">Valódi megoldás.</span></h2>
+    </div>
+    <p class="reveal">
+      A TóthBüfé QR Gyorsrendelő nem elméleti ötlet –
+      egy délután alatt prototípusolható, és holnaptól működhetne a Tóth János Technikumban.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;" class="reveal">
+      <a href="#howitworks" class="btn-primary">↑ Megnézem újra</a>
+      <a href="#problem"    class="btn-ghost">A probléma →</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <span>🏆 <strong>Tóth Hackathon 2026</strong> · Student Life kategória</span>
+  <span>Tóth János Technikum · Mórahalom</span>
+</footer>
+
+<script>
+/* ── STARFIELD ─────────────────────────────────────────────────────────────── */
+(function(){
+  const c  = document.getElementById('starfield');
+  const cx = c.getContext('2d');
+  let W, H, stars = [];
+
+  function resize(){
+    W = c.width  = window.innerWidth;
+    H = c.height = window.innerHeight;
+  }
+  function initStars(){
+    stars = Array.from({length: 160}, ()=>({
+      x: Math.random()*W,
+      y: Math.random()*H,
+      r: Math.random()*.8+.2,
+      a: Math.random(),
+      da: (Math.random()-.5)*.005
+    }));
+  }
+  function draw(){
+    cx.clearRect(0,0,W,H);
+    stars.forEach(s=>{
+      s.a = Math.max(0.05, Math.min(1, s.a+s.da));
+      if(s.a<=.05||s.a>=1) s.da*=-1;
+      cx.beginPath();
+      cx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      cx.fillStyle = `rgba(160,160,255,${s.a})`;
+      cx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', ()=>{ resize(); initStars(); });
+  resize(); initStars(); draw();
+})();
+
+/* ── QR PIXEL ART ─────────────────────────────────────────────────────────── */
+(function(){
+  const box = document.getElementById('qr-display');
+  if(!box) return;
+  const inner = document.createElement('div');
+  inner.className = 'qr-inner';
+  // Simple decorative QR pattern
+  const p = [
+    1,1,1,1,1,1,1,
+    1,0,0,0,0,0,1,
+    1,0,1,0,1,0,1,
+    1,0,0,0,0,0,1,
+    1,0,1,1,0,1,1,
+    1,0,0,1,0,0,1,
+    1,1,1,1,1,1,1
+  ];
+  p.forEach(v=>{
+    const cell = document.createElement('div');
+    cell.className='qr-cell';
+    cell.style.background = v ? '#111' : '#fff';
+    inner.appendChild(cell);
+  });
+  box.appendChild(inner);
+})();
+
+/* ── INTERSECTION OBSERVER ────────────────────────────────────────────────── */
+const io = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.reveal, .flow-step, .tl-item').forEach(el=>io.observe(el));
+
+/* ── COUNTDOWN BAR ANIMATION ─────────────────────────────────────────────── */
+const barObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const fill = document.getElementById('cbar');
+      fill.style.transition = 'width 2s ease';
+      fill.style.width = '100%';
+      barObs.disconnect();
+    }
+  });
+}, {threshold:.5});
+const cb = document.getElementById('cbar');
+if(cb) barObs.observe(cb.parentElement);
+
+/* ── REVENUE CHART ────────────────────────────────────────────────────────── */
+(function(){
+  const chartData = [
+    { label:'3 hó',  saas:15000, share:0,     other:0 },
+    { label:'6 hó',  saas:30000, share:15000, other:0 },
+    { label:'1 év',  saas:45000, share:30000, other:80000 },
+    { label:'2 év',  saas:120000,share:60000, other:160000 },
+    { label:'3 év',  saas:300000,share:120000,other:240000 },
+  ];
+  const MAX = 660000;
+  const area = document.getElementById('revenue-chart');
+  if(!area) return;
+
+  chartData.forEach(d=>{
+    const total = d.saas + d.share + d.other;
+    const pct = total / MAX;
+    const group = document.createElement('div');
+    group.className = 'bar-group';
+
+    const stack = document.createElement('div');
+    stack.className = 'bar-stack';
+    stack.style.height = '200px';
+    stack.style.justifyContent = 'flex-end';
+    stack.style.display = 'flex';
+    stack.style.flexDirection = 'column';
+    stack.style.width = '100%';
+
+    const makeBar = (h, cls) => {
+      const b = document.createElement('div');
+      b.className = `bar-seg ${cls}`;
+      b.style.height = '0px';
+      b.dataset.target = Math.round(200 * h / MAX) + 'px';
+      stack.appendChild(b);
+    };
+    if(d.other) makeBar(d.other, 'b-other');
+    if(d.share) makeBar(d.share, 'b-share');
+    if(d.saas)  makeBar(d.saas,  'b-saas');
+
+    const valEl = document.createElement('div');
+    valEl.className = 'bar-val';
+    valEl.textContent = total >= 1000000
+      ? (total/1000000).toFixed(1)+'M'
+      : Math.round(total/1000)+'K';
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'bar-label';
+    labelEl.textContent = d.label;
+
+    group.appendChild(valEl);
+    group.appendChild(stack);
+    group.appendChild(labelEl);
+    area.appendChild(group);
+  });
+
+  // animate bars on scroll
+  const chartObs = new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting){
+      document.querySelectorAll('.bar-seg').forEach(b=>{
+        setTimeout(()=>{ b.style.height = b.dataset.target; }, 100);
+      });
+      chartObs.disconnect();
+    }
+  },{threshold:.3});
+  chartObs.observe(area);
+})();
+
+/* ── ACTIVE NAV LINK ──────────────────────────────────────────────────────── */
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+const navObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      navLinks.forEach(a=>a.style.color='');
+      const active = document.querySelector(`.nav-links a[href="#${e.target.id}"]`);
+      if(active) active.style.color = 'var(--teal)';
+    }
+  });
+},{threshold:.4});
+sections.forEach(s=>navObs.observe(s));
+</script>
+</body>
+</html>
