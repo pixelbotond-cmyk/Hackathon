@@ -163,15 +163,16 @@
     }
     .btn-ghost:hover { border-color: var(--teal); background: var(--teal-dim); }
 
-    /* floating QR mockup */
+    /* floating mockups */
     .hero-visual {
       margin-top: 4rem;
       position: relative;
-      animation: floatY 4s ease-in-out infinite;
-    }
-    @keyframes floatY {
-      0%,100% { transform: translateY(0); }
-      50%      { transform: translateY(-16px); }
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem;
+      perspective: 1200px;
+      width: 100%;
     }
     .phone-mockup {
       width: 220px; height: 420px;
@@ -179,11 +180,36 @@
       backdrop-filter: blur(20px);
       border: 1px solid var(--border);
       border-radius: 40px;
-      margin: 0 auto;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 1rem;
-      box-shadow: 0 40px 80px rgba(0,0,0,.5), 0 0 60px rgba(0,212,170,.08);
+      align-items: center; justify-content: flex-start; gap: 1rem;
+      box-shadow: 0 40px 80px rgba(0,0,0,.5);
       padding: 2rem 1.5rem;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .phone-mockup.left {
+      transform: rotateY(20deg) scale(0.85) translateZ(-80px);
+      opacity: 0.6;
+      border-color: rgba(139,92,246,0.3);
+    }
+    .phone-mockup.right {
+      transform: rotateY(-20deg) scale(0.85) translateZ(-80px);
+      opacity: 0.6;
+      border-color: rgba(244,132,95,0.3);
+    }
+    .phone-mockup.center {
+      z-index: 10;
+      animation: floatY 4s ease-in-out infinite;
+      box-shadow: 0 40px 80px rgba(0,0,0,.5), 0 0 60px rgba(0,212,170,.08);
+      border-color: rgba(0,212,170,0.4);
+    }
+    .phone-mockup:hover {
+      transform: scale(0.95) translateZ(0);
+      opacity: 1;
+      z-index: 20;
+    }
+    @keyframes floatY {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-16px); }
     }
     .phone-status {
       font-size: .7rem; color: var(--muted); font-family: var(--mono);
@@ -781,13 +807,53 @@
     <div class="glow-ring"></div>
     <div class="glow-ring"></div>
     <div class="glow-ring"></div>
-    <div class="phone-mockup">
+    
+    <!-- LEFT: MENU MOCKUP -->
+    <div class="phone-mockup left">
+      <div class="phone-status">9:45 · Tóth WiFi ●</div>
+      <div class="phone-label" style="color:var(--purple);margin-top:1rem;">1. MENÜ VÁLASZTÁS</div>
+      
+      <div style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:1rem;margin-top:1rem;display:flex;flex-direction:column;gap:.5rem;">
+        <div style="font-size:2rem;text-align:center;">🥪</div>
+        <div style="font-size:.85rem;font-weight:700;text-align:center;color:var(--text);">Sajtos szendvics</div>
+        <div style="font-size:.7rem;color:var(--teal);text-align:center;font-weight:700;">Készleten: 12 db</div>
+      </div>
+      
+      <div style="width:100%;background:var(--purple);color:#fff;border-radius:8px;padding:.6rem;text-align:center;font-weight:700;font-size:.8rem;margin-top:auto;">Kosárba tesz</div>
+    </div>
+
+    <!-- CENTER: QR MOCKUP -->
+    <div class="phone-mockup center">
       <div class="phone-status">9:47 · Tóth WiFi ●</div>
-      <div class="qr-box" id="qr-display"></div>
-      <div class="phone-label">EGYEDI QR-KÓD</div>
+      <div class="qr-box" id="qr-display" style="margin-top:1.5rem;"></div>
+      <div class="phone-label">2. EGYEDI QR-KÓD</div>
       <div class="phone-name">Kovács Ádám · 10/A</div>
       <div class="phone-item">🥪 Sajtos szendvics · 450 Ft</div>
       <div class="phone-check">✓</div>
+    </div>
+
+    <!-- RIGHT: ADMIN MOCKUP -->
+    <div class="phone-mockup right">
+      <div class="phone-status">ADMIN PANEL ●</div>
+      <div class="phone-label" style="color:var(--coral);margin-top:1rem;">3. BEJÖVŐ RENDELÉSEK</div>
+      
+      <div style="width:100%;background:rgba(244,132,95,0.1);border:1px solid rgba(244,132,95,0.4);border-radius:12px;padding:.8rem;display:flex;justify-content:space-between;align-items:center;margin-top:1rem;">
+        <div style="text-align:left;">
+           <div style="font-size:.75rem;font-weight:700;color:var(--text);">Kovács Ádám</div>
+           <div style="font-size:.65rem;color:var(--muted);">🥪 Sajtos sz.</div>
+        </div>
+        <div style="width:24px;height:24px;border-radius:50%;background:var(--teal);color:#000;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;">✓</div>
+      </div>
+      
+      <div style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:.8rem;display:flex;justify-content:space-between;align-items:center;margin-top:.5rem;">
+        <div style="text-align:left;">
+           <div style="font-size:.75rem;font-weight:700;color:var(--text);">Nagy Péter</div>
+           <div style="font-size:.65rem;color:var(--muted);">🍎 Alma + Víz</div>
+        </div>
+        <div style="width:24px;height:24px;border-radius:50%;border:1px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:.7rem;"></div>
+      </div>
+      
+      <div style="margin-top:auto;font-size:.7rem;color:var(--coral);font-family:var(--mono);">1 RENDELÉS VÁRAKOZIK</div>
     </div>
   </div>
 </section>
