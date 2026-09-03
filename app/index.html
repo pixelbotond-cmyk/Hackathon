@@ -269,8 +269,7 @@
         <option>Tanár</option>
       </select>
     </div>
-    <!-- Honeypot: bot prevention -->
-    <input type="text" id="hp" style="display:none;" tabindex="-1" aria-hidden="true" />
+
 
     <button class="btn btn-primary" onclick="goStep2()">Tovább a menühöz →</button>
   </section>
@@ -372,9 +371,7 @@
     clearError('errorBox1');
     const name = document.getElementById('studentName').value.trim();
     const cls  = document.getElementById('studentClass').value;
-    const hp   = document.getElementById('hp').value;
 
-    if (hp) return; // bot detected
     if (!name || name.length < 2) { showError('errorBox1', 'Kérlek add meg a teljes neved (min. 2 karakter).'); return; }
     if (!cls) { showError('errorBox1', 'Kérlek válassz osztályt.'); return; }
     if (/[<>]/.test(name)) { showError('errorBox1', 'Érvénytelen karakter a névben.'); return; }
