@@ -1475,7 +1475,7 @@
     script.onerror = function() {
       // fallback: Google Charts QR image
       const img = document.createElement('img');
-      img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=' + encodeURIComponent('https://github.com/pixelbotond-cmyk/Hackathon');
+      img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=' + encodeURIComponent('/app/');
       img.alt = 'QR-kód';
       img.style.cssText = 'display:block;width:130px;height:130px;border-radius:6px;';
       box.appendChild(img);
@@ -1483,7 +1483,7 @@
     script.onload = function() {
       try {
         const qr = new QRCode(box, {
-          text: 'https://github.com/pixelbotond-cmyk/Hackathon',
+          text: window.location.origin + '/app/',
           width: 132,
           height: 132,
           colorDark: '#06060F',
