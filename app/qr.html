@@ -99,6 +99,18 @@
       object-fit: contain;
     }
 
+    .table-btn {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: .55rem .3rem; color: var(--text);
+      font-family: var(--ff); font-size: .75rem; font-weight: 700;
+      cursor: pointer; transition: all .2s;
+    }
+    .table-btn:hover { border-color: var(--teal); }
+    .table-btn.active {
+      background: rgba(0,212,170,0.15);
+      border-color: var(--teal); color: var(--teal);
+    }
+
     /* INFO */
     .order-info { width: 100%; }
     .info-row {
@@ -259,6 +271,23 @@
           </div>
         </div>
 
+        <!-- TABLE SELECTION -->
+        <div class="table-select-box" style="width:100%;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:16px;padding:1.1rem;text-align:center;">
+          <div style="font-size:.75rem;font-weight:800;color:var(--teal);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.75rem;">📍 Hol fogsz enni? (Asztalválasztás)</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;">
+            <button class="table-btn ${!order.table_number || order.table_number === 'Elvitel' ? 'active' : ''}" onclick="setTable('Elvitel')">🎒 Elvitel</button>
+            <button class="table-btn ${order.table_number === '1' ? 'active' : ''}" onclick="setTable('1')">1. asztal</button>
+            <button class="table-btn ${order.table_number === '2' ? 'active' : ''}" onclick="setTable('2')">2. asztal</button>
+            <button class="table-btn ${order.table_number === '3' ? 'active' : ''}" onclick="setTable('3')">3. asztal</button>
+            <button class="table-btn ${order.table_number === '4' ? 'active' : ''}" onclick="setTable('4')">4. asztal</button>
+            <button class="table-btn ${order.table_number === '5' ? 'active' : ''}" onclick="setTable('5')">5. asztal</button>
+            <button class="table-btn ${order.table_number === '6' ? 'active' : ''}" onclick="setTable('6')">6. asztal</button>
+          </div>
+          <div id="tableMsg" style="font-size:.75rem;color:var(--muted);margin-top:.6rem;">
+            ${order.table_number && order.table_number !== 'Elvitel' ? `✅ Kiszállítás a(z) <strong>${order.table_number}. asztalhoz</strong>!` : 'Pultnál történő átvétel (Elvitel)'}
+          </div>
+        </div>
+
         <div class="status-display" id="statusDisplay">
           <div class="status-icon" id="statusIcon">${STATUS_ICONS[status]}</div>
           <div class="status-msg" id="statusMsg">${STATUS_LABELS[status]}</div>
@@ -343,6 +372,27 @@
 
   function esc(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function setTable(num) {
+    if (!currentOrder) return;
+    currentOrder.table_number = num;
+
+    document.querySelectorAll('.table-btn').forEach(b => {
+      const isTarget = num === 'Elvitel' ? b.textContent.includes('Elvitel') : b.textContent.includes(`${num}. asztal`);
+      b.classList.toggle('active', isTarget);
+    });
+
+    const msg = document.getElementById('tableMsg');
+    if (msg) {
+      msg.innerHTML = num !== 'Elvitel' ? `✅ Kiszállítás a(z) <strong>${num}. asztalhoz</strong>!` : 'Pultnál történő átvétel (Elvitel)';
+    }
+
+    try {
+      await db.from('orders').update({ table_number: num }).eq('id', currentOrder.id);
+    } catch(e) {
+      console.error('Table update err:', e);
+    }
   }
 
   init();
