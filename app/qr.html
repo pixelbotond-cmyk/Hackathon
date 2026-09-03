@@ -262,8 +262,8 @@
             <span class="val">${esc(order.student_name)} · ${esc(order.student_class)}</span>
           </div>
           <div class="info-row">
-            <span class="label">Termék</span>
-            <span class="val">${product.emoji} ${esc(product.name)}</span>
+            <span class="label">Termék(ek)</span>
+            <span class="val">${esc(order.items_summary || ((product?.emoji || '') + ' ' + (product?.name || '')))}</span>
           </div>
           <div class="info-row">
             <span class="label">Fizetendő</span>

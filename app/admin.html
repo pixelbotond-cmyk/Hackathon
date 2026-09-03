@@ -445,7 +445,7 @@
         <div class="order-emoji">${product?.emoji || '🍽️'}</div>
         <div class="order-info">
           <div class="order-name">${esc(o.student_name)} · <span style="color:var(--muted)">${esc(o.student_class)}</span>${tableTag}</div>
-          <div class="order-detail">${product?.name || '–'} · ${product?.price || 0} Ft</div>
+          <div class="order-detail">${esc(o.items_summary || (product?.name || '–'))} · ${product?.price || 0} Ft</div>
         </div>
         <div class="order-time">${timeStr}</div>
         <div class="order-actions">${actionBtns}</div>
@@ -533,8 +533,16 @@
                       <div style="background:rgba(13,13,31,0.8);border:1px solid var(--border);border-radius:10px;padding:.6rem .75rem;font-size:.8rem;display:flex;justify-content:space-between;align-items:center;">
                         <div>
                           <div style="font-weight:800;color:var(--text);">${esc(o.student_name)} (${esc(o.student_class)})</div>
-                          <div style="font-size:.72rem;color:var(--yellow);font-weight:700;margin-top:.1rem;">${o.products?.emoji || ''} ${esc(o.products?.name || '')}</div>
+                          <div style="font-size:.72rem;color:var(--yellow);font-weight:700;margin-top:.1rem;">${esc(o.items_summary || ((o.products?.emoji || '') + ' ' + (o.products?.name || '')))}</div>
                         </div>
+                        <div>
+                          ${o.status === 'pending' 
+                            ? `<button class="btn-action btn-ready" style="padding:.3rem .6rem;font-size:.72rem;" onclick="setStatus('${o.id}','ready')">🔔 Kész</button>`
+                            : `<button class="btn-action btn-done" style="padding:.3rem .6rem;font-size:.72rem;" onclick="setStatus('${o.id}','done')">✅ Átadtam</button>`}
+                        </div>
+                      </div>
+                    `).join('') : '<div style="color:var(--muted);font-size:.75rem;text-align:center;margin:auto;font-family:var(--mono);">[ Asztal üres ]</div>'}
+                  </div>
                         <div>
                           ${o.status === 'pending' 
                             ? `<button class="btn-action btn-ready" style="padding:.3rem .6rem;font-size:.72rem;" onclick="setStatus('${o.id}','ready')">🔔 Kész</button>`

@@ -231,6 +231,29 @@
       .menu-grid { grid-template-columns: 1fr; }
       nav { padding: .75rem 1.25rem; }
     }
+
+    .qty-controls {
+      display: flex; align-items: center; justify-content: center; gap: .6rem;
+      margin-top: .75rem; background: rgba(0,0,0,0.3);
+      padding: .35rem .6rem; border-radius: 10px; border: 1px solid var(--border);
+    }
+    .qty-btn {
+      width: 32px; height: 32px; border-radius: 8px; border: none;
+      background: var(--teal); color: #000; font-weight: 800; font-size: 1.1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: transform .15s, opacity .15s;
+    }
+    .qty-btn:hover { transform: scale(1.1); }
+    .qty-btn:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+    .qty-num { font-weight: 800; font-family: var(--mono); font-size: 1rem; min-width: 24px; text-align: center; color: var(--text); }
+
+    .cart-summary-bar {
+      background: rgba(13,13,31,0.95);
+      border: 1px solid var(--teal);
+      border-radius: 16px; padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 10px 30px rgba(0,212,170,0.2);
+    }
   </style>
 </head>
 <body>
@@ -323,8 +346,7 @@
     name: '',
     cls:  '',
     products: [],
-    selectedId: null,
-    selectedProduct: null,
+    cart: {}, // productId -> quantity
   };
 
   /* ── SUPABASE INIT ──────────────────────────────────────────────────────── */
@@ -371,6 +393,41 @@
     document.getElementById('step'+n).classList.add('active');
     updateDots(n);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ── CART LOGIC ──────────────────────────────────────────────────────────── */
+  function changeQty(id, delta, event) {
+    if (event) event.stopPropagation();
+    const current = state.cart[id] || 0;
+    const p = state.products.find(item => item.id === id);
+    if (!p) return;
+
+    const newQty = Math.max(0, Math.min(p.stock || 99, current + delta));
+    if (newQty === 0) {
+      delete state.cart[id];
+    } else {
+      state.cart[id] = newQty;
+    }
+    renderMenu();
+  }
+
+  function getCartDetails() {
+    let items = [];
+    let totalPrice = 0;
+    let totalCount = 0;
+
+    Object.keys(state.cart).forEach(id => {
+      const qty = state.cart[id];
+      const p = state.products.find(item => item.id === id);
+      if (p && qty > 0) {
+        items.push({ ...p, qty, itemTotal: p.price * qty });
+        totalPrice += p.price * qty;
+        totalCount += qty;
+      }
+    });
+
+    const summaryText = items.map(i => `${i.qty}x ${i.name}`).join(', ');
+    return { items, totalPrice, totalCount, summaryText };
   }
 
   /* ── STEP 1 ─────────────────────────────────────────────────────────────── */
@@ -423,36 +480,63 @@
       return;
     }
 
-    container.innerHTML = `<div class="menu-grid">
-      ${state.products.map(p => `
-        <div class="menu-card ${p.stock <= 0 ? 'unavailable' : ''} ${state.selectedId === p.id ? 'selected' : ''}"
-             onclick="${p.stock > 0 ? `selectProduct('${p.id}')` : ''}"
-             role="button" aria-label="${p.name}, ${p.price} Ft"
-             tabindex="${p.stock > 0 ? 0 : -1}">
-          <div class="menu-emoji">${p.emoji || '🍽️'}</div>
-          <div class="menu-name">${p.name}</div>
-          <div class="menu-price">${p.price} Ft</div>
-          <div class="menu-stock">${p.stock > 0 ? `Készlet: ${p.stock} db` : 'Elfogyott'}</div>
-        </div>
-      `).join('')}
-    </div>`;
-  }
+    const { items, totalPrice, totalCount, summaryText } = getCartDetails();
 
-  function selectProduct(id) {
-    state.selectedId = id;
-    state.selectedProduct = state.products.find(p => p.id === id);
-    renderMenu();
-    document.getElementById('btnToStep3').disabled = false;
+    container.innerHTML = `
+      ${totalCount > 0 ? `
+        <div class="cart-summary-bar">
+          <div>
+            <div style="font-size:.75rem;color:var(--teal);font-weight:800;letter-spacing:.08em;">🛒 KOSÁR TARTALMA (${totalCount} db)</div>
+            <div style="font-size:.85rem;font-weight:700;color:var(--text);margin-top:.2rem;">${escHtml(summaryText)}</div>
+          </div>
+          <div style="font-size:1.2rem;font-weight:900;font-family:var(--mono);color:var(--yellow);">${totalPrice} Ft</div>
+        </div>
+      ` : ''}
+
+      <div class="menu-grid">
+        ${state.products.map(p => {
+          const qty = state.cart[p.id] || 0;
+          return `
+            <div class="menu-card ${p.stock <= 0 ? 'unavailable' : ''} ${qty > 0 ? 'selected' : ''}">
+              <div class="menu-emoji">${p.emoji || '🍽️'}</div>
+              <div class="menu-name">${p.name}</div>
+              <div class="menu-price">${p.price} Ft</div>
+              <div class="menu-stock">${p.stock > 0 ? `Készlet: ${p.stock} db` : 'Elfogyott'}</div>
+              
+              ${p.stock > 0 ? `
+                <div class="qty-controls">
+                  <button type="button" class="qty-btn" onclick="changeQty('${p.id}', -1, event)" ${qty <= 0 ? 'disabled' : ''}>-</button>
+                  <span class="qty-num">${qty}</span>
+                  <button type="button" class="qty-btn" onclick="changeQty('${p.id}', 1, event)">+</button>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    document.getElementById('btnToStep3').disabled = totalCount === 0;
   }
 
   /* ── STEP 3 – ÖSSZEFOGLALÓ ──────────────────────────────────────────────── */
   function goStep3() {
-    if (!state.selectedProduct) return;
+    const { items, totalPrice, totalCount } = getCartDetails();
+    if (totalCount === 0) return;
+
     document.getElementById('summaryCard').innerHTML = `
       <div class="summary-row"><span class="label">Neved</span><span class="val">${escHtml(state.name)}</span></div>
       <div class="summary-row"><span class="label">Osztályod</span><span class="val">${escHtml(state.cls)}</span></div>
-      <div class="summary-row"><span class="label">Termék</span><span class="val">${state.selectedProduct.emoji} ${escHtml(state.selectedProduct.name)}</span></div>
-      <div class="summary-row total"><span class="label">Fizetendő</span><span class="val">${state.selectedProduct.price} Ft</span></div>
+      <div style="border-bottom:1px solid var(--border);padding:.75rem 0;margin:.4rem 0;">
+        <div style="font-size:.75rem;color:var(--teal);font-weight:800;letter-spacing:.08em;margin-bottom:.5rem;">MEGRENDELT TERMÉKEK:</div>
+        ${items.map(i => `
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.9rem;padding:.25rem 0;">
+            <span>${i.emoji || '🍽️'} <strong>${i.qty}x</strong> ${escHtml(i.name)}</span>
+            <span style="font-weight:700;font-family:var(--mono);color:var(--yellow);">${i.itemTotal} Ft</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="summary-row total"><span class="label">Fizetendő összesen</span><span class="val">${totalPrice} Ft</span></div>
     `;
     showStep(3);
   }
@@ -464,18 +548,35 @@
     btn.textContent = 'Rendelés leadása…';
     clearError('errorBox3');
 
+    const { items, summaryText } = getCartDetails();
+    if (!items.length) return;
+
     const qrHash = crypto.randomUUID();
+    const firstProduct = items[0];
 
     try {
+      // Try inserting with items_summary column
       const { error } = await db.from('orders').insert({
         student_name: state.name,
         student_class: state.cls,
-        product_id: state.selectedProduct.id,
+        product_id: firstProduct.id,
+        items_summary: summaryText,
         qr_hash: qrHash,
         status: 'pending'
       });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback for older DB schemas: insert summaryText directly into student_name or proceed
+        const fallbackRes = await db.from('orders').insert({
+          student_name: `${state.name} (${summaryText})`,
+          student_class: state.cls,
+          product_id: firstProduct.id,
+          qr_hash: qrHash,
+          status: 'pending'
+        });
+        if (fallbackRes.error) throw fallbackRes.error;
+      }
+
       window.location.href = `qr.html?hash=${qrHash}`;
     } catch(error) {
       showError('errorBox3', `⚠️ Hiba: ${error.message}`);
