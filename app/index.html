@@ -271,7 +271,7 @@
     </div>
 
 
-    <button class="btn btn-primary" onclick="goStep2()">Tovább a menühöz →</button>
+    <button type="button" class="btn btn-primary" onclick="goStep2()">Tovább a menühöz →</button>
   </section>
 
   <!-- STEP 2: Menü -->
@@ -318,11 +318,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  /* ── SUPABASE INIT ──────────────────────────────────────────────────────── */
-  const SUPABASE_URL = 'https://jtwkhpptlcvdshegnrln.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_GTRTfY8YJLIU-5hPm4ZaIA_0LmgqaiK';
-  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
   /* ── STATE ──────────────────────────────────────────────────────────────── */
   let state = {
     name: '',
@@ -331,6 +326,20 @@
     selectedId: null,
     selectedProduct: null,
   };
+
+  /* ── SUPABASE INIT ──────────────────────────────────────────────────────── */
+  const SUPABASE_URL = 'https://jtwkhpptlcvdshegnrln.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_GTRTfY8YJLIU-5hPm4ZaIA_0LmgqaiK';
+  let db = null;
+  try {
+    if (window.supabase) {
+      db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else {
+      console.error("Supabase JS not loaded");
+    }
+  } catch(e) {
+    console.error("Supabase init error:", e);
+  }
 
   /* ── HELPERS ────────────────────────────────────────────────────────────── */
   function showToast(msg, type='success') {
@@ -387,19 +396,24 @@
     const container = document.getElementById('menuContainer');
     container.innerHTML = '<div class="loading"><div class="spinner"></div><span>Menü betöltése…</span></div>';
 
-    const { data, error } = await db
-      .from('products')
-      .select('*')
-      .eq('is_available', true)
-      .order('price');
-
-    if (error) {
-      container.innerHTML = '<div class="error-box" style="display:block">⚠️ Nem sikerült betölteni a menüt. Próbáld újra!</div>';
+    if (!db) {
+      container.innerHTML = '<div class="error-box" style="display:block">⚠️ Hálózati hiba: A rendszer nem tudott csatlakozni. Kérlek frissítsd az oldalt vagy próbáld másik böngészőből!</div>';
       return;
     }
 
-    state.products = data;
-    renderMenu();
+    try {
+      const { data, error } = await db
+        .from('products')
+        .select('*')
+        .eq('is_available', true)
+        .order('price');
+
+      if (error) throw error;
+      state.products = data;
+      renderMenu();
+    } catch (error) {
+      container.innerHTML = `<div class="error-box" style="display:block">⚠️ Nem sikerült betölteni a menüt: ${error.message}</div>`;
+    }
   }
 
   function renderMenu() {
@@ -452,23 +466,22 @@
 
     const qrHash = crypto.randomUUID();
 
-    const { error } = await db.from('orders').insert({
-      student_name: state.name,
-      student_class: state.cls,
-      product_id: state.selectedProduct.id,
-      qr_hash: qrHash,
-      status: 'pending'
-    });
+    try {
+      const { error } = await db.from('orders').insert({
+        student_name: state.name,
+        student_class: state.cls,
+        product_id: state.selectedProduct.id,
+        qr_hash: qrHash,
+        status: 'pending'
+      });
 
-    if (error) {
+      if (error) throw error;
+      window.location.href = `qr.html?hash=${qrHash}`;
+    } catch(error) {
       showError('errorBox3', `⚠️ Hiba: ${error.message}`);
       btn.disabled = false;
       btn.textContent = '🎯 Leadom a rendelést!';
-      return;
     }
-
-    // Redirect to QR page
-    window.location.href = `qr.html?hash=${qrHash}`;
   }
 
   /* ── UTILS ──────────────────────────────────────────────────────────────── */
