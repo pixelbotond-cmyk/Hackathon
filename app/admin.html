@@ -543,14 +543,6 @@
                       </div>
                     `).join('') : '<div style="color:var(--muted);font-size:.75rem;text-align:center;margin:auto;font-family:var(--mono);">[ Asztal üres ]</div>'}
                   </div>
-                        <div>
-                          ${o.status === 'pending' 
-                            ? `<button class="btn-action btn-ready" style="padding:.3rem .6rem;font-size:.72rem;" onclick="setStatus('${o.id}','ready')">🔔 Kész</button>`
-                            : `<button class="btn-action btn-done" style="padding:.3rem .6rem;font-size:.72rem;" onclick="setStatus('${o.id}','done')">✅ Átadtam</button>`}
-                        </div>
-                      </div>
-                    `).join('') : '<div style="color:var(--muted);font-size:.75rem;text-align:center;margin:auto;font-family:var(--mono);">[ Asztal üres ]</div>'}
-                  </div>
 
                   <!-- PHYSICAL CHAIR GRAPHICS (BOTTOM CHAIRS) -->
                   <div style="display:flex;justify-content:space-around;margin-top:.75rem;opacity:.5;">
