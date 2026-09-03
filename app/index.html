@@ -548,33 +548,42 @@
     btn.textContent = 'Rendelés leadása…';
     clearError('errorBox3');
 
-    const { items, summaryText } = getCartDetails();
+    const { items, totalPrice, summaryText } = getCartDetails();
     if (!items.length) return;
 
     const qrHash = crypto.randomUUID();
     const firstProduct = items[0];
 
     try {
-      // Try inserting with items_summary column
       const { error } = await db.from('orders').insert({
         student_name: state.name,
         student_class: state.cls,
         product_id: firstProduct.id,
         items_summary: summaryText,
+        total_price: totalPrice,
         qr_hash: qrHash,
         status: 'pending'
       });
 
       if (error) {
-        // Fallback for older DB schemas: insert summaryText directly into student_name or proceed
-        const fallbackRes = await db.from('orders').insert({
-          student_name: `${state.name} (${summaryText})`,
+        const { error: err2 } = await db.from('orders').insert({
+          student_name: state.name,
           student_class: state.cls,
           product_id: firstProduct.id,
+          items_summary: summaryText,
           qr_hash: qrHash,
           status: 'pending'
         });
-        if (fallbackRes.error) throw fallbackRes.error;
+        if (err2) {
+          const { error: err3 } = await db.from('orders').insert({
+            student_name: state.name,
+            student_class: state.cls,
+            product_id: firstProduct.id,
+            qr_hash: qrHash,
+            status: 'pending'
+          });
+          if (err3) throw err3;
+        }
       }
 
       window.location.href = `qr.html?hash=${qrHash}`;

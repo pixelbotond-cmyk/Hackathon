@@ -387,7 +387,7 @@
     const done    = todayOrders.filter(o => o.status === 'done').length;
     const revenue = todayOrders
       .filter(o => o.status === 'done')
-      .reduce((sum, o) => sum + (o.products?.price || 0), 0);
+      .reduce((sum, o) => sum + (o.total_price || o.products?.price || 0), 0);
 
     const activeWithTable = orders.filter(o => o.status !== 'done' && o.table_number && o.table_number !== 'Elvitel').length;
 
@@ -429,6 +429,8 @@
   function renderOrderCard(o) {
     const product = o.products;
     const timeStr = new Date(o.created_at).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+    const cleanName = o.student_name.replace(/\s*\([\s\S]*\)/, '');
+    const totalPrice = o.total_price || product?.price || 0;
 
     const tableTag = o.table_number && o.table_number !== 'Elvitel' 
       ? `<span style="background:rgba(0,212,170,0.15);color:var(--teal);padding:.2rem .5rem;border-radius:6px;font-size:.75rem;font-weight:700;margin-left:.4rem;">📍 ${o.table_number}. asztal</span>`
@@ -444,8 +446,8 @@
       <div class="order-card status-${o.status}" id="card-${o.id}">
         <div class="order-emoji">${product?.emoji || '🍽️'}</div>
         <div class="order-info">
-          <div class="order-name">${esc(o.student_name)} · <span style="color:var(--muted)">${esc(o.student_class)}</span>${tableTag}</div>
-          <div class="order-detail">${esc(o.items_summary || (product?.name || '–'))} · ${product?.price || 0} Ft</div>
+          <div class="order-name">${esc(cleanName)} · <span style="color:var(--muted)">${esc(o.student_class)}</span>${tableTag}</div>
+          <div class="order-detail">${esc(o.items_summary || (product?.name || '–'))} · <strong style="color:var(--yellow);font-family:var(--mono);">${totalPrice} Ft</strong></div>
         </div>
         <div class="order-time">${timeStr}</div>
         <div class="order-actions">${actionBtns}</div>
@@ -529,19 +531,23 @@
 
                   <!-- ORDERS LIST FOR THIS TABLE -->
                   <div style="display:flex;flex-direction:column;gap:.6rem;flex:1;">
-                    ${tableOrders.length ? tableOrders.map(o => `
-                      <div style="background:rgba(13,13,31,0.8);border:1px solid var(--border);border-radius:10px;padding:.6rem .75rem;font-size:.8rem;display:flex;justify-content:space-between;align-items:center;">
-                        <div>
-                          <div style="font-weight:800;color:var(--text);">${esc(o.student_name)} (${esc(o.student_class)})</div>
-                          <div style="font-size:.72rem;color:var(--yellow);font-weight:700;margin-top:.1rem;">${esc(o.items_summary || ((o.products?.emoji || '') + ' ' + (o.products?.name || '')))}</div>
+                    ${tableOrders.length ? tableOrders.map(o => {
+                      const cName = o.student_name.replace(/\s*\([\s\S]*\)/, '');
+                      const itemPrice = o.total_price || o.products?.price || 0;
+                      return `
+                        <div style="background:rgba(13,13,31,0.8);border:1px solid var(--border);border-radius:10px;padding:.6rem .75rem;font-size:.8rem;display:flex;justify-content:space-between;align-items:center;">
+                          <div>
+                            <div style="font-weight:800;color:var(--text);">${esc(cName)} (${esc(o.student_class)})</div>
+                            <div style="font-size:.72rem;color:var(--yellow);font-weight:700;margin-top:.1rem;">${esc(o.items_summary || ((o.products?.emoji || '') + ' ' + (o.products?.name || '')))} · ${itemPrice} Ft</div>
+                          </div>
+                          <div>
+                            ${o.status === 'pending' 
+                              ? `<button class="btn-action btn-ready" style="padding:.3rem .6rem;font-size:.72rem;" onclick="setStatus('${o.id}','ready')">🔔 Kész</button>`
+                              : `<button class="btn-action btn-done" style="padding:.3rem .6rem;font-size:.72rem;" onclick="setStatus('${o.id}','done')">✅ Átadtam</button>`}
+                          </div>
                         </div>
-                        <div>
-                          ${o.status === 'pending' 
-                            ? `<button class="btn-action btn-ready" style="padding:.3rem .6rem;font-size:.72rem;" onclick="setStatus('${o.id}','ready')">🔔 Kész</button>`
-                            : `<button class="btn-action btn-done" style="padding:.3rem .6rem;font-size:.72rem;" onclick="setStatus('${o.id}','done')">✅ Átadtam</button>`}
-                        </div>
-                      </div>
-                    `).join('') : '<div style="color:var(--muted);font-size:.75rem;text-align:center;margin:auto;font-family:var(--mono);">[ Asztal üres ]</div>'}
+                      `;
+                    }).join('') : '<div style="color:var(--muted);font-size:.75rem;text-align:center;margin:auto;font-family:var(--mono);">[ Asztal üres ]</div>'}
                   </div>
 
                   <!-- PHYSICAL CHAIR GRAPHICS (BOTTOM CHAIRS) -->
