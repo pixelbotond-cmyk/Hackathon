@@ -470,45 +470,89 @@
     });
 
     list.innerHTML = `
-      <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:24px;padding:1.5rem;">
-        <div style="background:linear-gradient(90deg, rgba(244,132,95,0.2), rgba(0,212,170,0.2));border:1px dashed var(--coral);border-radius:12px;padding:1rem;text-align:center;font-weight:800;font-size:.85rem;letter-spacing:.1em;color:var(--coral);margin-bottom:1.5rem;">
-          🥪 BÜFÉ KIADÓ PULT (Pultnál átvétel: ${takeAwayOrders.length} db rendelés)
+      <div style="background:#0a0a18;border:1px solid rgba(0,212,170,0.3);border-radius:24px;padding:2rem;position:relative;background-image:radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);background-size:24px 24px;">
+        
+        <!-- TOP: PULT & KONYHA -->
+        <div style="background:linear-gradient(90deg, #15152a, #1f1f3d);border:2px solid var(--coral);border-radius:16px;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:2.5rem;box-shadow:0 10px 30px rgba(244,132,95,0.15);position:relative;">
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <span style="font-size:2.2rem;">🥪</span>
+            <div>
+              <div style="font-weight:900;font-size:1.1rem;color:var(--coral);letter-spacing:.05em;">BÜFÉ KIADÓ PULT & KASSZA</div>
+              <div style="font-size:.78rem;color:var(--muted);">Elviteles rendelések átvételi pontja</div>
+            </div>
+          </div>
+          <div style="background:rgba(244,132,95,0.15);border:1px solid var(--coral);padding:.5rem 1.25rem;border-radius:12px;text-align:right;">
+            <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;font-weight:700;">🎒 Pulti átvétel</div>
+            <div style="font-size:1.1rem;font-weight:900;color:var(--coral);">${takeAwayOrders.length} db várakozik</div>
+          </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:1rem;">
-          ${tableNumbers.map(n => {
-            const tableOrders = tableMap[n];
-            const hasPending = tableOrders.some(o => o.status === 'pending');
-            const hasReady = tableOrders.some(o => o.status === 'ready');
-            const statusStyle = hasPending ? 'border-color:var(--coral);box-shadow:0 0 15px rgba(244,132,95,0.25);' : hasReady ? 'border-color:var(--purple);box-shadow:0 0 15px rgba(139,92,246,0.25);' : '';
+        <!-- MAIN FLOOR PLAN TÉRKEP -->
+        <div style="position:relative;">
+          <!-- MAP TITLE -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;padding:0 .5rem;">
+            <span style="font-weight:900;font-size:.85rem;letter-spacing:.12em;color:var(--teal);text-transform:uppercase;">🏛️ ÉTKEZŐ TEREM ALAPRAJZ (6 ASZTAL)</span>
+            <span style="font-size:.75rem;color:var(--muted);background:rgba(255,255,255,0.04);padding:.3rem .7rem;border-radius:8px;border:1px solid var(--border);">🚪 BEJÁRAT A JOBB OLDALON →</span>
+          </div>
 
-            return `
-              <div style="background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:1rem;min-height:150px;display:flex;flex-direction:column;${statusStyle}">
-                <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:.4rem;margin-bottom:.6rem;">
-                  <span style="font-weight:900;font-size:1rem;color:var(--text);">📍 ${n}. ASZTAL</span>
-                  <span style="font-size:.65rem;font-weight:800;padding:.2rem .5rem;border-radius:10px;background:${tableOrders.length ? 'var(--teal)' : 'rgba(255,255,255,0.05)'};color:${tableOrders.length ? '#000' : 'var(--muted)'};">
-                    ${tableOrders.length ? `${tableOrders.length} rendelés` : 'Üres'}
-                  </span>
-                </div>
+          <!-- TABLES GRID -->
+          <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:1.75rem;">
+            ${tableNumbers.map(n => {
+              const tableOrders = tableMap[n];
+              const hasPending = tableOrders.some(o => o.status === 'pending');
+              const hasReady = tableOrders.some(o => o.status === 'ready');
+              
+              const borderStyle = hasPending 
+                ? 'border:2px solid var(--coral);box-shadow:0 0 25px rgba(244,132,95,0.3);background:rgba(244,132,95,0.04);' 
+                : hasReady 
+                ? 'border:2px solid var(--teal);box-shadow:0 0 25px rgba(0,212,170,0.3);background:rgba(0,212,170,0.04);' 
+                : 'border:2px dashed rgba(255,255,255,0.12);background:rgba(255,255,255,0.01);';
 
-                <div style="display:flex;flex-direction:column;gap:.5rem;flex:1;">
-                  ${tableOrders.length ? tableOrders.map(o => `
-                    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:.5rem;font-size:.78rem;display:flex;justify-content:space-between;align-items:center;">
-                      <div>
-                        <div style="font-weight:700;">${esc(o.student_name)} (${esc(o.student_class)})</div>
-                        <div style="font-size:.7rem;color:var(--muted);">${o.products?.emoji || ''} ${esc(o.products?.name || '')}</div>
-                      </div>
-                      <div>
-                        ${o.status === 'pending' 
-                          ? `<button class="btn-action btn-ready" style="padding:.25rem .5rem;font-size:.7rem;" onclick="setStatus('${o.id}','ready')">🔔 Kész</button>`
-                          : `<button class="btn-action btn-done" style="padding:.25rem .5rem;font-size:.7rem;" onclick="setStatus('${o.id}','done')">✅ Átadtam</button>`}
-                      </div>
+              return `
+                <div style="border-radius:20px;padding:1.25rem;min-height:190px;display:flex;flex-direction:column;position:relative;transition:all .3s;${borderStyle}">
+                  
+                  <!-- PHYSICAL CHAIR GRAPHICS (TOP & BOTTOM CHAIRS) -->
+                  <div style="display:flex;justify-content:space-around;margin-bottom:.5rem;opacity:.5;">
+                    <div style="width:24px;height:6px;background:var(--border);border-radius:4px;"></div>
+                    <div style="width:24px;height:6px;background:var(--border);border-radius:4px;"></div>
+                  </div>
+
+                  <!-- TABLE TOP BAR -->
+                  <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:.5rem;margin-bottom:.75rem;">
+                    <div style="display:flex;align-items:center;gap:.4rem;">
+                      <span style="font-weight:900;font-size:1.1rem;color:var(--text);">📍 ${n}. ASZTAL</span>
                     </div>
-                  `).join('') : '<div style="color:var(--muted);font-size:.75rem;text-align:center;margin:auto;">Nincs aktív kiszállítás</div>'}
+                    <span style="font-size:.65rem;font-weight:800;padding:.2rem .6rem;border-radius:12px;background:${hasPending ? 'var(--coral)' : hasReady ? 'var(--teal)' : 'rgba(255,255,255,0.08)'};color:${hasPending || hasReady ? '#000' : 'var(--muted)'};">
+                      ${hasPending ? '⏳ KÉSZÍTÉS' : hasReady ? '🔔 KISZÁLLÍTANDÓ' : 'SZABAD'}
+                    </span>
+                  </div>
+
+                  <!-- ORDERS LIST FOR THIS TABLE -->
+                  <div style="display:flex;flex-direction:column;gap:.6rem;flex:1;">
+                    ${tableOrders.length ? tableOrders.map(o => `
+                      <div style="background:rgba(13,13,31,0.8);border:1px solid var(--border);border-radius:10px;padding:.6rem .75rem;font-size:.8rem;display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                          <div style="font-weight:800;color:var(--text);">${esc(o.student_name)} (${esc(o.student_class)})</div>
+                          <div style="font-size:.72rem;color:var(--yellow);font-weight:700;margin-top:.1rem;">${o.products?.emoji || ''} ${esc(o.products?.name || '')}</div>
+                        </div>
+                        <div>
+                          ${o.status === 'pending' 
+                            ? `<button class="btn-action btn-ready" style="padding:.3rem .6rem;font-size:.72rem;" onclick="setStatus('${o.id}','ready')">🔔 Kész</button>`
+                            : `<button class="btn-action btn-done" style="padding:.3rem .6rem;font-size:.72rem;" onclick="setStatus('${o.id}','done')">✅ Átadtam</button>`}
+                        </div>
+                      </div>
+                    `).join('') : '<div style="color:var(--muted);font-size:.75rem;text-align:center;margin:auto;font-family:var(--mono);">[ Asztal üres ]</div>'}
+                  </div>
+
+                  <!-- PHYSICAL CHAIR GRAPHICS (BOTTOM CHAIRS) -->
+                  <div style="display:flex;justify-content:space-around;margin-top:.75rem;opacity:.5;">
+                    <div style="width:24px;height:6px;background:var(--border);border-radius:4px;"></div>
+                    <div style="width:24px;height:6px;background:var(--border);border-radius:4px;"></div>
+                  </div>
                 </div>
-              </div>
-            `;
-          }).join('')}
+              `;
+            }).join('')}
+          </div>
         </div>
       </div>
     `;
