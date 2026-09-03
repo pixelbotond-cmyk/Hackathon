@@ -193,6 +193,87 @@
     }
     .btn-ghost:hover { border-color: var(--teal); background: var(--teal-dim); }
 
+    /* HERO QR BANNER */
+    .hero-qr-banner {
+      max-width: 660px;
+      margin: 2.5rem auto 1rem;
+      background: rgba(13, 13, 31, 0.75);
+      border: 1px solid rgba(0, 212, 170, 0.35);
+      border-radius: 24px;
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.75rem;
+      box-shadow: 0 20px 50px rgba(0, 212, 170, 0.12), inset 0 1px 0 rgba(255,255,255,0.1);
+      backdrop-filter: blur(20px);
+      position: relative;
+      z-index: 10;
+      animation: fadeUp .8s .4s ease both;
+    }
+    .hero-qr-wrapper {
+      background: #fff;
+      padding: 10px;
+      border-radius: 16px;
+      flex-shrink: 0;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 156px;
+      height: 156px;
+    }
+    .hero-qr-info {
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+    }
+    .hero-qr-tag {
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      color: var(--teal);
+      text-transform: uppercase;
+    }
+    .hero-qr-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.25;
+    }
+    .hero-qr-desc {
+      font-size: .85rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .hero-qr-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .85rem;
+      font-weight: 700;
+      color: var(--teal);
+      text-decoration: none;
+      margin-top: .2rem;
+      transition: transform .2s;
+    }
+    .hero-qr-btn:hover {
+      transform: translateX(4px);
+    }
+
+    @media (max-width: 640px) {
+      .hero-qr-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 1.5rem;
+        gap: 1.25rem;
+      }
+      .hero-qr-info {
+        align-items: center;
+        text-align: center;
+      }
+    }
+
     /* floating mockups */
     .hero-visual {
       margin-top: 4rem;
@@ -924,6 +1005,19 @@
     <a href="#features"   class="btn-ghost">Funkciók →</a>
   </div>
 
+  <!-- LARGE SCANNER CALLOUT ABOVE MOCKUPS -->
+  <div class="hero-qr-banner">
+    <div class="hero-qr-wrapper">
+      <div id="qr-display"></div>
+    </div>
+    <div class="hero-qr-info">
+      <span class="hero-qr-tag">📱 PRÓBÁLD KI ÉLŐBEN!</span>
+      <h3 class="hero-qr-title">Olvasd be a QR-kódot a telefonoddal!</h3>
+      <p class="hero-qr-desc">Nyisd meg a kamerát a telefonodon, olvasd be ezt a QR-kódot és adj le egy tesztrendelést az élő felületen!</p>
+      <a href="./app/" class="hero-qr-btn">Vagy nyisd meg az appot közvetlenül →</a>
+    </div>
+  </div>
+
   <div class="hero-visual" aria-hidden="true">
     <div class="glow-ring"></div>
     <div class="glow-ring"></div>
@@ -943,14 +1037,19 @@
       <div style="width:100%;background:var(--purple);color:#fff;border-radius:8px;padding:.6rem;text-align:center;font-weight:700;font-size:.8rem;margin-top:auto;">Kosárba tesz</div>
     </div>
 
-    <!-- CENTER: QR MOCKUP -->
+    <!-- CENTER: REALTIME STATUS MOCKUP -->
     <div class="phone-mockup center">
       <div class="phone-status">9:47 · Tóth WiFi ●</div>
-      <div class="qr-box" id="qr-display" style="margin-top:1.5rem;"></div>
-      <div class="phone-label">2. EGYEDI QR-KÓD</div>
-      <div class="phone-name">Kovács Ádám · 10/A</div>
-      <div class="phone-item">🥪 Sajtos szendvics · 450 Ft</div>
-      <div class="phone-check">✓</div>
+      <div class="phone-label" style="color:var(--teal);margin-top:1.25rem;">2. VALÓS IDEJŰ ÁLLAPOT</div>
+      
+      <div style="width:100%;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.3);border-radius:16px;padding:1.25rem 1rem;margin-top:1rem;display:flex;flex-direction:column;align-items:center;gap:.6rem;text-align:center;">
+        <span style="background:rgba(0,212,170,0.2);color:var(--teal);font-size:.65rem;font-weight:800;letter-spacing:.12em;padding:.25rem .75rem;border-radius:20px;border:1px solid rgba(0,212,170,0.4);">🔔 ÁTVEHETŐ!</span>
+        <div style="font-size:.95rem;font-weight:800;color:var(--text);margin-top:.2rem;">Kovács Ádám · 10/A</div>
+        <div style="font-size:.8rem;color:var(--yellow);font-weight:700;font-family:var(--mono);">🥪 Sajtos szendvics · 450 Ft</div>
+        <div style="font-size:.68rem;color:var(--muted);margin-top:.2rem;">Értesítés: "Átvehető a büfében"</div>
+      </div>
+      
+      <div class="phone-check" style="margin-top:auto;">✓</div>
     </div>
 
     <!-- RIGHT: ADMIN MOCKUP -->
