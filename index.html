@@ -796,10 +796,56 @@
       /* Scale hero visual */
       .hero-visual { transform: scale(0.75); margin-top: 1rem; }
     }
+    /* ─── HAMBURGER ────────────────────────────────────────────────────────── */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: .5rem;
+      background: none;
+      border: none;
+      z-index: 1001;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px; height: 2px;
+      background: var(--text);
+      border-radius: 2px;
+      transition: transform .3s ease, opacity .3s ease;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(6,6,15,0.97);
+      backdrop-filter: blur(20px);
+      z-index: 999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+    }
+    .mobile-nav.open { display: flex; }
+    .mobile-nav a {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .mobile-nav a:hover { color: var(--teal); }
+
     @media (max-width: 600px) {
       section { padding: 4rem 1.25rem; }
       nav     { padding: .75rem 1.25rem; }
       #tech .tech-grid { grid-template-columns: 1fr; }
+      .hamburger { display: flex; }
+      .nav-badge { display: none; }
       
       /* Scale hero visual further on mobile and adjust margins to avoid empty space */
       .hero-visual { transform: scale(0.45); margin-top: -3rem; margin-bottom: -5rem; }
@@ -818,6 +864,16 @@
 <!-- ░ STARFIELD ░ -->
 <canvas id="starfield"></canvas>
 
+<!-- ░ MOBILE NAV OVERLAY ░ -->
+<div class="mobile-nav" id="mobileNav" role="dialog" aria-modal="true" aria-label="Mobil navigáció">
+  <a href="#problem"  onclick="closeMobileNav()">Probléma</a>
+  <a href="#solution" onclick="closeMobileNav()">Megoldás</a>
+  <a href="#howitworks" onclick="closeMobileNav()">Működés</a>
+  <a href="#features" onclick="closeMobileNav()">Funkciók</a>
+  <a href="#business" onclick="closeMobileNav()">Biznisz</a>
+  <a href="#roadmap" onclick="closeMobileNav()">Jövő</a>
+</div>
+
 <!-- ░ NAV ░ -->
 <nav aria-label="Főnavigáció">
   <div class="nav-logo">TóthBüfé <span>QR</span></div>
@@ -829,12 +885,15 @@
     <li><a href="#business">Biznisz</a></li>
   </ul>
   <span class="nav-badge">Hackathon 2026</span>
+  <button class="hamburger" id="hamburger" aria-label="Menü megnyitása" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
 
 <main>
 <!-- ─────────────────── HERO ─────────────────────────────────────────────── -->
 <section id="hero" aria-label="Bemutatás">
-  <div class="hero-eyebrow">Student Life kategória · Tóth János Technikum</div>
+  <div class="hero-eyebrow">Diák Élet kategória · Tóth János Technikum</div>
 
   <h1 class="hero-title">
     Vége a<br/>
@@ -1351,7 +1410,7 @@
 </main>
 
 <footer>
-  <span>🏆 <strong>Tóth Hackathon 2026</strong> · Student Life kategória</span>
+  <span>🏆 <strong>Tóth Hackathon 2026</strong> · Diák Élet kategória</span>
   <span>Tóth János Technikum · Mórahalom</span>
 </footer>
 
@@ -1391,30 +1450,47 @@
   resize(); initStars(); draw();
 })();
 
-/* ── QR PIXEL ART ─────────────────────────────────────────────────────────── */
-(function(){
-  const box = document.getElementById('qr-display');
-  if(!box) return;
-  const inner = document.createElement('div');
-  inner.className = 'qr-inner';
-  // Simple decorative QR pattern
-  const p = [
-    1,1,1,1,1,1,1,
-    1,0,0,0,0,0,1,
-    1,0,1,0,1,0,1,
-    1,0,0,0,0,0,1,
-    1,0,1,1,0,1,1,
-    1,0,0,1,0,0,1,
-    1,1,1,1,1,1,1
-  ];
-  p.forEach(v=>{
-    const cell = document.createElement('div');
-    cell.className='qr-cell';
-    cell.style.background = v ? '#111' : '#fff';
-    inner.appendChild(cell);
-  });
-  box.appendChild(inner);
+/* ── REAL QR CODE (QRCode.js) ────────────────────────────────────────────── */
+(function() {
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+  script.onload = function() {
+    const box = document.getElementById('qr-display');
+    if (!box) return;
+    box.innerHTML = '';
+    box.style.background = '#fff';
+    box.style.borderRadius = '12px';
+    box.style.padding = '8px';
+    box.style.display = 'flex';
+    box.style.alignItems = 'center';
+    box.style.justifyContent = 'center';
+    new QRCode(box, {
+      text: 'https://github.com/pixelbotond-cmyk/Hackathon',
+      width: 130,
+      height: 130,
+      colorDark: '#06060F',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  };
+  document.head.appendChild(script);
 })();
+
+/* ── HAMBURGER MENU ──────────────────────────────────────────────────────── */
+const hamburger = document.getElementById('hamburger');
+const mobileNav = document.getElementById('mobileNav');
+function closeMobileNav() {
+  hamburger.classList.remove('open');
+  mobileNav.classList.remove('open');
+  hamburger.setAttribute('aria-expanded','false');
+}
+if (hamburger) {
+  hamburger.addEventListener('click', () => {
+    const isOpen = mobileNav.classList.toggle('open');
+    hamburger.classList.toggle('open', isOpen);
+    hamburger.setAttribute('aria-expanded', String(isOpen));
+  });
+}
 
 /* ── INTERSECTION OBSERVER ────────────────────────────────────────────────── */
 const io = new IntersectionObserver(entries=>{
